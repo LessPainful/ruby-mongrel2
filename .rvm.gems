@@ -1,5 +1,5 @@
 # .gems generated gem export file. Note that any env variable settings will be missing. Append these after using a ';' field separator
-amalgalite -v1.1.2
+#amalgalite -v1.1.2
 configurability -v1.0.10
 hoe-deveiate -v0.1.1
 nokogiri -v1.5.2
