@@ -57,28 +57,8 @@ class Mongrel2::Table
 
 
 	### Make sure the inner Hash is unique on duplications.
-	def initialize_dup( * ) # :nodoc:
-		@hash = @hash.dup
-		@hash.each do |k, v|
-			if v.is_a?( Array )
-				@hash[ k ] = v.map( &:dup )
-			else
-				@hash[ k ] = v.dup
-			end
-		end
-	end
-
-
-	### Make sure the inner Hash is unique on clones.
-	def initialize_clone( * ) # :nodoc:
-		@hash = @hash.clone
-		@hash.each do |k, v|
-			if v.is_a?( Array )
-				@hash[ k ] = v.map( &:clone )
-			else
-				@hash[ k ] = v.clone
-			end
-		end
+	def initialize_copy( * ) # :nodoc:
+		@hash = deep_copy( @hash )
 	end
 
 
@@ -236,6 +216,30 @@ class Mongrel2::Table
 		key.to_s.split( '_' ).collect {|part| part.capitalize }.join( '-' )
 	end
 
+
+	### Recursively copying the specified +obj+ and return the result.
+	def deep_copy( obj )
+		# Handle mocks during testing
+		return obj if obj.class.name == 'RSpec::Mocks::Mock'
+
+		return case obj
+				when NilClass, Numeric, TrueClass, FalseClass, Symbol
+						obj
+
+				when Array
+						obj.map {|o| deep_copy(o) }
+
+				when Hash
+						newhash = {}
+						obj.each do |k,v|
+								newhash[ deep_copy(k) ] = deep_copy( v )
+						end
+						newhash
+
+				else
+						obj.clone
+				end
+	end
 
 end # class Mongrel2::Table
 
