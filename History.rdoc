@@ -1,3 +1,10 @@
+== v0.24.0 [2012-05-31] Michael Granger <ged@FaerieMUD.org>
+
+- Fix a bug when duping a Mongrel2::Table with immediate objects as values.
+- Change Config.settings to a Table.
+- Add support for Mongrel2 async uploads.
+
+
 == v0.23.0 [2012-05-17] Michael Granger <ged@FaerieMUD.org>
 
 - Add a convenience method to Mongrel2::Handler for fetching its
