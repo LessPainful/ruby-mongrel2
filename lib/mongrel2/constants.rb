@@ -65,6 +65,10 @@ module Mongrel2::Constants
 		UNPROCESSABLE_ENTITY          = 422
 		LOCKED                        = 423
 		FAILED_DEPENDENCY             = 424
+		UPGRADE_REQUIRED              = 426
+		RECONDITION_REQUIRED          = 428
+		TOO_MANY_REQUESTS             = 429
+		REQUEST_HEADERS_TOO_LARGE     = 431
 
 		SERVER_ERROR                  = 500
 		NOT_IMPLEMENTED               = 501
@@ -140,6 +144,9 @@ module Mongrel2::Constants
 		    424 => "Failed Dependency",
 		    425 => "No code",
 		    426 => "Upgrade Required",
+		    428 => "Precondition Required",
+		    429 => "Too Many Requests",
+		    431 => "Request Headers too Large",
 		    500 => "Internal Server Error",
 		    501 => "Method Not Implemented",
 		    502 => "Bad Gateway",
