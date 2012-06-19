@@ -47,6 +47,7 @@ end
 
 setting "zeromq.threads", 1
 setting "limits.content_length", 4096
+setting "control_port", 'ipc://var/run/control'
 setting "upload.temp_store", upload_dir + 'mongrel2.upload.XXXXXX'
 
 mkdir_p 'var/run'

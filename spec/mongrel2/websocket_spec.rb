@@ -177,6 +177,17 @@ describe Mongrel2::WebSocket do
 			result.payload.read.should == ''
 		end
 
+		it "can be streamed in chunks instead of read all at once" do
+			data = BINARY_DATA * 256
+			binary = @factory.binary( '/websock', data, :fin )
+
+			binary.chunksize = 16
+			binary.each_chunk.to_a[0,2].should == [
+				"\x82\x7F\x00\x00\x00\x00\x00\x01\x00\x00\a\xBD\xB3\xFE\x87\xEB".force_encoding('binary'),
+				"\xA9\x0En2q\xCE\x85\xAF)\x88w_d\xD6M\x9E".force_encoding('binary'),
+			]
+		end
+
 	end
 
 

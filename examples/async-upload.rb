@@ -8,6 +8,9 @@ require 'mongrel2/handler'
 # A example of how to allow Mongrel2's async uploads.
 class AsyncUploadHandler < Mongrel2::Handler
 
+	# App ID
+	ID = 'async-upload'
+
 	### Load up the ERB template from the DATA section on instantiation.
 	def initialize( * )
 		super

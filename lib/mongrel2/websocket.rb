@@ -384,10 +384,15 @@ module Mongrel2::WebSocket
 		def each_chunk
 			self.validate
 
-			iter = self.bytes.enum_for( :each_slice, self.chunksize )
+			iter = Enumerator.new do |yielder|
+				self.bytes.each_slice( self.chunksize ) do |bytes|
+					yielder.yield( bytes.pack('C*') )
+				end
+			end
 
 			if block_given?
-				 iter.each {|chunk| yield(chunk) }
+				block = Proc.new
+				iter.each( &block )
 			else
 				return iter
 			end

@@ -4,7 +4,6 @@
 require 'loggability'
 require 'pathname'
 require 'mongrel2/config'
-require 'mongrel2/logging'
 require 'mongrel2/handler'
 
 
@@ -99,8 +98,9 @@ class WebSocketEchoServer < Mongrel2::Handler
 			frame.opcode.to_s.upcase,
 			frame.fin? ? '' : '(cont)',
 			frame.headers.x_forwarded_for,
-			frame.payload[ 0, 20 ],
+			frame.payload.read( 20 ),
 		]
+		frame.payload.rewind
 
 		# If a client sends an invalid frame, close their connection, but politely.
 		if !frame.valid?
@@ -130,7 +130,7 @@ class WebSocketEchoServer < Mongrel2::Handler
 		# Make the response frame
 		response = frame.response
 		response.fin = frame.fin?
-		response.payload = frame.payload
+		IO.copy_stream( frame.payload, response.payload )
 
 		return response
 	end
