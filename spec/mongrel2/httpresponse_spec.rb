@@ -75,7 +75,7 @@ describe Mongrel2::HTTPResponse do
 	end
 
 	it "doesn't have a body" do
-		@response.body.should be_empty()
+		@response.body.size.should == 0
 	end
 
 	it "stringifies to a valid RFC2616 response string" do
@@ -94,7 +94,8 @@ describe Mongrel2::HTTPResponse do
 		@response.reset
 
 		@response.should_not be_handled()
-		@response.body.should == ''
+		@response.body.should be_a( StringIO )
+		@response.body.size.should == 0
 		@response.headers.should have(1).keys
 	end
 
@@ -116,7 +117,7 @@ describe Mongrel2::HTTPResponse do
 
 	it "can find the length of its body if it's a String with multi-byte characters in it" do
 		test_body = 'Хорошая собака, Стрелке! Очень хорошо.'
-		@response.body = test_body
+		@response << test_body
 
 		@response.get_content_length.should == test_body.bytesize
 	end
@@ -238,14 +239,6 @@ describe Mongrel2::HTTPResponse do
 		@response.get_content_length.should == 0
 	end
 
-	it "raises a descriptive error message if it can't get the body's length" do
-		@response.body = Object.new
-
-		lambda {
-			@response.get_content_length
-		}.should raise_error( Mongrel2::ResponseError, /content length/i )
-	end
-
 
 	it "can build a valid HTTP status line for its status" do
 		@response.status = HTTP::SEE_OTHER
@@ -271,7 +264,8 @@ describe Mongrel2::HTTPResponse do
 
 	it "has a puts method for appending objects to the body" do
 		@response.puts( :something_to_sable )
-		@response.body.should == "something_to_sable\n"
+		@response.body.rewind
+		@response.body.read.should == "something_to_sable\n"
 	end
 
 end

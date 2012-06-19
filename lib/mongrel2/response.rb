@@ -1,5 +1,6 @@
 #!/usr/bin/ruby
 
+require 'stringio'
 require 'tnetstring'
 require 'yajl'
 require 'loggability'
@@ -31,10 +32,13 @@ class Mongrel2::Response
 
 	### Create a new Response object for the specified +sender_id+, +conn_id+, and +body+.
 	def initialize( sender_id, conn_id, body='' )
+		body = StringIO.new( body, 'a+' ) unless body.respond_to?( :read )
+
 		@sender_id = sender_id
 		@conn_id   = conn_id
 		@body      = body
 		@request   = nil
+		@chunksize = DEFAULT_CHUNKSIZE
 	end
 
 
@@ -50,11 +54,22 @@ class Mongrel2::Response
 	# the response will be routed to by the mongrel2 server
 	attr_accessor :conn_id
 
-	# The body of the response
-	attr_accessor :body
+	# The body of the response as an IO (or IOish) object
+	attr_reader :body
 
 	# The request that this response is for, if there is one
 	attr_accessor :request
+
+	# The number of bytes to write to Mongrel in a single "chunk"
+	attr_accessor :chunksize
+
+
+	### Set the response body to +newbody+. If +newbody+ is not a IO-like object (i.e., it
+	### doesn't respond to #eof?, it will be wrapped in a StringIO in 'a+' mode).
+	def body=( newbody )
+		newbody = StringIO.new( newbody, 'a+' ) unless newbody.respond_to?( :eof? )
+		@body = newbody
+	end
 
 
 	### Append the given +object+ to the response body. Returns the response for
@@ -67,15 +82,28 @@ class Mongrel2::Response
 
 	### Write the given +objects+ to the response body, calling #to_s on each one.
 	def puts( *objects )
-		objects.each do |obj|
-			self << obj.to_s.chomp << $/
-		end
+		self.body.puts( *objects )
 	end
 
 
 	### Stringify the response, which just returns its body.
 	def to_s
-		return self.body
+		pos = self.body.pos
+		self.body.pos = 0
+		return self.body.read
+	ensure
+		self.body.pos = pos
+	end
+
+
+	### Yield chunks of the response to the caller's block. By default, just yields
+	### the result of calling #to_s on the response.
+	def each_chunk
+		if block_given?
+			yield( self.to_s )
+		else
+			return [ self.to_s ].to_enum
+		end
 	end
 
 

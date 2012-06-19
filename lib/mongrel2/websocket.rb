@@ -26,6 +26,11 @@ module Mongrel2::WebSocket
 
 	# WebSocket-related header and status constants
 	module Constants
+
+		# The default number of bytes to write out to Mongrel for a single "chunk"
+		DEFAULT_CHUNKSIZE = 512 * 1024 # 512 kilobytes
+
+
 		# WebSocket frame header
 		#    0                   1                   2                   3
 		#    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -245,9 +250,10 @@ module Mongrel2::WebSocket
 
 			super
 
-			@flags = Integer( self.headers.flags || DEFAULT_FLAGS )
+			@flags         = Integer( self.headers.flags || DEFAULT_FLAGS )
 			@request_frame = nil
-			@errors = []
+			@errors        = []
+			@chunksize     = DEFAULT_CHUNKSIZE
 		end
 
 
@@ -270,6 +276,8 @@ module Mongrel2::WebSocket
 		# The Array of validation errors
 		attr_reader :errors
 
+		# The number of bytes to write to Mongrel in a single "chunk"
+		attr_accessor :chunksize
 
 		### Returns +true+ if the request's FIN flag is set. This flag indicates that
 		### this is the final fragment in a message.  The first fragment MAY also be
@@ -332,9 +340,7 @@ module Mongrel2::WebSocket
 
 		### Write the given +objects+ to the payload, calling #to_s on each one.
 		def puts( *objects )
-			objects.each do |obj|
-				self << obj.to_s.chomp << $/
-			end
+			self.payload.puts( *objects )
 		end
 
 
@@ -344,61 +350,96 @@ module Mongrel2::WebSocket
 			self.log.warn "Unknown status code %d" unless CLOSING_STATUS_DESC.key?( statuscode )
 			status_msg = "%d %s" % [ statuscode, CLOSING_STATUS_DESC[statuscode] ]
 
-			self.payload.replace( status_msg )
+			self.payload.truncate( 0 )
+			self.payload.puts( status_msg )
 		end
 
 
-		### Check the frame for problems, appending descriptions of any issues to
-		### the #errors array.
+		### Validate the frame, raising a Mongrel2::WebSocket::FrameError if there
+		### are validation problems.
 		def validate
-			self.errors.clear
-
-			self.validate_payload_encoding
-			self.validate_control_frame
-			self.validate_opcode
-			self.validate_reserved_flags
+			unless self.valid?
+				self.log.error "Validation failed."
+				raise Mongrel2::WebSocket::FrameError, "invalid frame: %s" % [ self.errors.join(', ') ]
+			end
 		end
 
 
 		### Sanity-checks the frame and returns +false+ if any problems are found.
 		### Error messages will be in #errors.
 		def valid?
-			self.validate
+			self.errors.clear
+
+			self.validate_payload_encoding
+			self.validate_control_frame
+			self.validate_opcode
+			self.validate_reserved_flags
+
 			return self.errors.empty?
+		end
+
+
+		### Mongrel2::Connection API -- Yield the response in chunks if called with a block, else
+		### return an Enumerator that will do the same.
+		def each_chunk
+			self.validate
+
+			iter = self.bytes.enum_for( :each_slice, self.chunksize )
+
+			if block_given?
+				 iter.each {|chunk| yield(chunk) }
+			else
+				return iter
+			end
 		end
 
 
 		### Stringify into a response suitable for sending to the client.
 		def to_s
-			data = self.payload.to_s
+			self.remember_payload_settings do
+				self.payload.rewind
+				self.payload.set_encoding( 'binary' )
 
-			# Make sure the outgoing payload is UTF-8, except in the case of a
-			# binary frame.
-			if self.opcode != :binary && data.encoding != Encoding::UTF_8
-				self.log.debug "Transcoding %s payload data to UTF-8" % [ data.encoding.name ]
-				data.encode!( Encoding::UTF_8 )
+				header = self.make_header
+				data = self.payload.read
+
+				return header + data
 			end
-
-			# Make sure everything's in order
-			unless self.valid?
-				self.log.error "Validation failed."
-				raise Mongrel2::WebSocket::FrameError, "invalid frame: %s" %
-					[ self.errors.join( ', ' ) ]
-			end
-
-			# Now force everything into binary so it can be catenated
-			data.force_encoding( Encoding::ASCII_8BIT )
-			return [
-				self.make_header( data ),
-				data
-			].join
 		end
 
 
 		### Return an Enumerator for the bytes of the raw frame as it appears
 		### on the wire.
 		def bytes
-			return self.to_s.bytes
+			self.remember_payload_settings do
+				self.payload.rewind
+				self.log.debug "Making a bytes iterator for a %s payload" %
+					[ self.payload.external_encoding.name ]
+
+				return Enumerator.new do |yielder|
+					self.payload.set_encoding( 'binary' )
+					self.payload.rewind
+
+					header_i = self.make_header.bytes
+					body_i   = self.payload.bytes
+
+					header_i.each_with_index {|byte, i| yielder.yield(byte) }
+					body_i.each_with_index   {|byte, i| yielder.yield(byte) }
+				end
+			end
+		end
+
+
+		### Remember the payload IO's external encoding, position, etc. and restore them
+		### when the block returns.
+		def remember_payload_settings
+			original_enc = self.payload.external_encoding
+			original_pos = self.payload.pos
+
+			yield
+		ensure
+			self.payload.set_encoding( original_enc ) if original_enc
+			self.payload.pos = original_pos if original_pos
 		end
 
 
@@ -414,7 +455,7 @@ module Mongrel2::WebSocket
 				self.log.debug "Setting up response %p with symmetrical flags" % [ @response ]
 				if self.opcode == :ping
 					@response.opcode = :pong
-					@response.payload = self.payload
+					IO.copy_stream( self.payload, @response.payload, 4096 )
 				else
 					@response.opcode = self.opcode
 				end
@@ -472,15 +513,16 @@ module Mongrel2::WebSocket
 				self.rsv3? ? 1 : 0,
 				self.opcode,
 				self.numeric_opcode,
-				(self.payload.bytesize / 1024.0),
+				(self.payload.size / 1024.0),
 			]
 		end
 
 
-		### Make a WebSocket header for the receiving frame and return it.
-		def make_header( data )
+		### Make a WebSocket header for the frame and return it.
+		def make_header
 			header = ''.force_encoding( Encoding::ASCII_8BIT )
-			length = data.bytesize
+			length = self.payload.size
+
 			self.log.debug "Making wire protocol header for payload of %d bytes" % [ length ]
 
 			# Pack the frame according to its size
@@ -505,12 +547,14 @@ module Mongrel2::WebSocket
 		### #errors.
 		def validate_payload_encoding
 			if self.opcode == :binary
-				self.log.debug "Binary payload: forcing to ASCII-8BIT"
-				self.payload.force_encoding( Encoding::ASCII_8BIT )
+				self.log.debug "Binary payload: setting external encoding to ASCII-8BIT"
+				self.payload.set_encoding( Encoding::ASCII_8BIT )
 			else
-				self.log.debug "Non-binary payload: forcing to UTF-8"
-				self.payload.force_encoding( Encoding::UTF_8 )
-				self.errors << "Invalid UTF8 in payload" unless self.payload.valid_encoding?
+				self.log.debug "Non-binary payload: setting external encoding to UTF-8"
+				self.payload.set_encoding( Encoding::UTF_8 )
+				# :TODO: Is there a way to check that the data in a File or Socket will
+				# transcode successfully? Probably not.
+				# self.errors << "Invalid UTF8 in payload" unless self.payload.valid_encoding?
 			end
 		end
 
@@ -520,8 +564,8 @@ module Mongrel2::WebSocket
 		def validate_control_frame
 			return unless self.control?
 
-			if self.payload.bytesize > 125
-				self.log.error "Payload of control frame exceeds 125 bytes (%d)" % [ self.payload.bytesize ]
+			if self.payload.size > 125
+				self.log.error "Payload of control frame exceeds 125 bytes (%d)" % [ self.payload.size ]
 				self.errors << "payload of control frame cannot exceed 125 bytes"
 			end
 
@@ -536,7 +580,7 @@ module Mongrel2::WebSocket
 		### opcodes, you'll want to override this.
 		def validate_opcode
 			if self.opcode == :reserved
-				self.log.error "Frame uses reserved opcode 0x%x" % [ self.numeric_opcode ] 
+				self.log.error "Frame uses reserved opcode 0x%x" % [ self.numeric_opcode ]
 				self.errors << "Frame uses reserved opcode"
 			end
 		end
@@ -549,6 +593,16 @@ module Mongrel2::WebSocket
 				self.log.error "Frame has one or more reserved flags set."
 				self.errors << "Frame has one or more reserved flags set."
 			end
+		end
+
+
+		#######
+		private
+		#######
+
+		### Return a simple hexdump of the specified +data+.
+		def hexdump( data )
+			data.bytes.to_a.map {|byte| sprintf('%#02x',byte) }.join( ' ' )
 		end
 
 

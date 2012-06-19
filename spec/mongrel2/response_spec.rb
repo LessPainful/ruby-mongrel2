@@ -48,12 +48,24 @@ describe Mongrel2::Response do
 
 	it "can be created with a body" do
 		response = Mongrel2::Response.new( TEST_UUID, 8, 'the body' )
-		response.body.should == 'the body'
+		response.body.read.should == 'the body'
 	end
 
 	it "stringifies to its body contents" do
 		response = Mongrel2::Response.new( TEST_UUID, 8, 'the body' )
 		response.to_s.should == 'the body'
+	end
+
+	it "can be streamed in chunks" do
+		response = Mongrel2::Response.new( TEST_UUID, 8, 'the body' )
+		expect {|b| response.each_chunk(&b) }.to yield_with_args( 'the body' )
+	end
+
+	it "wraps non-IO bodies set via the #body= accessor in a StringIO" do
+		response = Mongrel2::Response.new( TEST_UUID, 8 )
+		response.body = 'a stringioed body'
+		response.body.should be_a( StringIO )
+		response.body.string.should == 'a stringioed body'
 	end
 
 	context	"an instance with default values" do
@@ -62,18 +74,21 @@ describe Mongrel2::Response do
 			@response = Mongrel2::Response.new( TEST_UUID, 8 )
 		end
 
-		it "has an empty-string body" do
-			@response.body.should == ''
+		it "has an empty-IO body" do
+			@response.body.rewind
+			@response.body.read.should == ''
 		end
 
-		it "supports the append operator to append objects to the body" do
+		it "supports the append operator to append objects to the body IO" do
 			@response << 'some body stuff' << ' and some more body stuff'
-			@response.body.should == 'some body stuff and some more body stuff'
+			@response.body.rewind
+			@response.body.read.should == 'some body stuff and some more body stuff'
 		end
 
-		it "supports #puts for appending objects separated by EOL" do
+		it "supports #puts for appending objects to the body IO separated by EOL" do
 			@response.puts( "some body stuff\n", " and some more body stuff\n\n", :and_a_symbol )
-			@response.body.should == "some body stuff\n and some more body stuff\n\nand_a_symbol\n"
+			@response.body.rewind
+			@response.body.read.should == "some body stuff\n and some more body stuff\n\nand_a_symbol\n"
 		end
 
 	end

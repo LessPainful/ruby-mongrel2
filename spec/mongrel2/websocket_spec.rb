@@ -144,7 +144,8 @@ describe Mongrel2::WebSocket do
 			result.conn_id.should == frame.conn_id
 			result.opcode.should == :text
 
-			result.payload.should == ''
+			result.payload.rewind
+			result.payload.read.should == ''
 		end
 
 		it "creates PONG responses with the same payload for PING frames" do
@@ -157,7 +158,8 @@ describe Mongrel2::WebSocket do
 			result.conn_id.should == frame.conn_id
 			result.opcode.should == :pong
 
-			result.payload.should == 'WOO'
+			result.payload.rewind
+			result.payload.read.should == 'WOO'
 		end
 
 		it "allows header flags and/or opcode to be specified when creating a response" do
@@ -171,7 +173,8 @@ describe Mongrel2::WebSocket do
 			result.opcode.should == :close
 			result.should be_fin()
 
-			result.payload.should == ''
+			result.payload.rewind
+			result.payload.read.should == ''
 		end
 
 	end
@@ -180,14 +183,15 @@ describe Mongrel2::WebSocket do
 	describe "a WebSocket text frame" do
 
 		before( :each ) do
-			@frame = @factory.text( '/websock', 'Damn the torpedoes!', :fin )
+			@frame = @factory.text( '/websock', '', :fin )
 		end
 
 		it "automatically transcodes its payload to UTF8" do
 			text = "Стрелке!".encode( Encoding::KOI8_U )
-			@frame.payload.replace( text )
+			@frame << text
 
-			@frame.to_s[ 2..-1 ].bytes.to_a.should ==
+			# 2-byte header
+			@frame.bytes.to_a[ 2..-1 ].should ==
 				[0xD0, 0xA1, 0xD1, 0x82, 0xD1, 0x80, 0xD0, 0xB5, 0xD0, 0xBB, 0xD0,
 				 0xBA, 0xD0, 0xB5, 0x21]
 		end
@@ -201,7 +205,10 @@ describe Mongrel2::WebSocket do
 		end
 
 		it "doesn't try to transcode non-UTF8 data" do
-			@frame.to_s.encoding.should == Encoding::ASCII_8BIT
+			# 4-byte header
+			@frame.bytes.to_a[ 4, 16 ].should ==
+				[ 0x07, 0xbd, 0xb3, 0xfe, 0x87, 0xeb, 0xa9, 0x0e, 0x6e, 0x32, 0x71,
+				  0xce, 0x85, 0xaf, 0x29, 0x88 ]
 		end
 	end
 
@@ -213,7 +220,8 @@ describe Mongrel2::WebSocket do
 
 		it "has convenience methods for setting its payload via integer status code" do
 			@frame.set_status( CLOSE_BAD_DATA )
-			@frame.to_s[ 2..-1 ].should == "%d %s" %
+			@frame.payload.rewind
+			@frame.payload.read.should == "%d %s\n" %
 				[ CLOSE_BAD_DATA, CLOSING_STATUS_DESC[CLOSE_BAD_DATA] ]
 		end
 
@@ -227,16 +235,16 @@ describe Mongrel2::WebSocket do
 
 
 		it "raises an exception if its payload is bigger than 125 bytes" do
-			@frame.body = "x" * 126
+			@frame.body << "x" * 126
 			expect {
-				@frame.to_s
+				@frame.validate
 			}.to raise_error( Mongrel2::WebSocket::FrameError, /cannot exceed 125 bytes/i )
 		end
 
 		it "raises an exception if it's fragmented" do
 			@frame.fin = false
 			expect {
-				@frame.to_s
+				@frame.validate
 			}.to raise_error( Mongrel2::WebSocket::FrameError, /fragmented/i )
 		end
 
@@ -274,7 +282,7 @@ describe Mongrel2::WebSocket do
 			binary = @factory.binary( '/websock', BINARY_DATA, :fin )
 
 			# 1 + 1 + 2
-			binary.to_s[0,4].bytes.to_a.should == [ 0x82, 0x7E, 0x01, 0x00 ]
+			binary.bytes.to_a[0,4].should == [ 0x82, 0x7E, 0x01, 0x00 ]
 			binary.to_s[4..-1].should == BINARY_DATA
 		end
 
@@ -284,7 +292,7 @@ describe Mongrel2::WebSocket do
 			binary = @factory.binary( '/websock', data, :fin )
 
 			# 1 + 1 + 8
-			binary.to_s[0,10].bytes.to_a.should ==
+			binary.bytes.to_a[0,10].should ==
 				[ 0x82, 0x7F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00 ]
 			binary.to_s[10..-1].should == data
 		end

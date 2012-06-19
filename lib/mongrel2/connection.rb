@@ -131,7 +131,9 @@ class Mongrel2::Connection
 
 	### Write the specified +response+ (Mongrel::Response object) to the requester.
 	def reply( response )
-		self.send( response.sender_id, response.conn_id, response.to_s )
+		response.each_chunk do |data|
+			self.send( response.sender_id, response.conn_id, data )
+		end
 	end
 
 

@@ -1,5 +1,6 @@
 #!/usr/bin/ruby
 
+require 'stringio'
 require 'tnetstring'
 require 'yajl'
 require 'loggability'
@@ -110,6 +111,8 @@ class Mongrel2::Request
 	### and +body+. The optional +nil+ is for the raw request content, which can be useful
 	### later for debugging.
 	def initialize( sender_id, conn_id, path, headers, body='', raw=nil )
+		body = StringIO.new( body, 'r+b' ) unless body.respond_to?( :read )
+
 		@sender_id = sender_id
 		@conn_id   = Integer( conn_id )
 		@path      = path
@@ -131,7 +134,7 @@ class Mongrel2::Request
 	# The listener ID on the server
 	attr_reader :conn_id
 
-	# The path component of the requested URL in HTTP, or the equivalent 
+	# The path component of the requested URL in HTTP, or the equivalent
 	# for other request types
 	attr_reader :path
 
@@ -139,7 +142,7 @@ class Mongrel2::Request
 	attr_reader :headers
 	alias_method :header, :headers
 
-	# The request body data, if there is any, as a String
+	# The request body data, if there is any, as an IO object
 	attr_reader :body
 
 	# The raw request content, if the request was parsed from mongrel2

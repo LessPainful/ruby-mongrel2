@@ -37,7 +37,7 @@ class Mongrel2::HTTPResponse < Mongrel2::Response
 
 		@headers = Mongrel2::Table.new
 		@status = nil
-		self.reset
+		self.set_defaults
 
 		@headers.merge!( headers )
 	end
@@ -55,12 +55,18 @@ class Mongrel2::HTTPResponse < Mongrel2::Response
 	attr_accessor :status
 
 
+	### Set up response default headers, etc.
+	def set_defaults
+		@headers[:server] = Mongrel2.version_string( true )
+	end
+
+
 	### Stringify the response
 	def to_s
 		return [
 			self.status_line,
 			self.header_data,
-			self.bodiless? ? '' : self.body
+			self.bodiless? ? '' : super
 		].join( "\r\n" )
 	end
 
@@ -69,8 +75,8 @@ class Mongrel2::HTTPResponse < Mongrel2::Response
 	def status_line
 		self.log.debug "Building status line for status: %p" % [ self.status ]
 
-		st = self.status ||
-		     ((self.body.nil? || self.body.empty?) ? HTTP::NO_CONTENT : HTTP::OK)
+		st = self.status || (self.body.size.zero? ? HTTP::NO_CONTENT : HTTP::OK)
+
 		return STATUS_LINE_FORMAT % [ st, HTTP::STATUS_NAME[st] ]
 	end
 
@@ -141,9 +147,10 @@ class Mongrel2::HTTPResponse < Mongrel2::Response
 	### Clear any existing headers and body and restore them to their defaults
 	def reset
 		@headers.clear
-		@headers[:server] = Mongrel2.version_string( true )
+		@body.truncate( 0 )
 		@status = nil
-		@body = ''
+
+		self.set_defaults
 
 		return true
 	end
@@ -174,25 +181,15 @@ class Mongrel2::HTTPResponse < Mongrel2::Response
 	end
 
 
-	### Get the length of the body, either by calling its #length method if it has
-	### one, or using #seek and #tell if it implements those. If neither of those are
-	### possible, an exception is raised.
+	### Get the length of the body IO. If the IO's offset is somewhere other than
+	### the beginning or end, the size of the remainder is used.
 	def get_content_length
 		if self.bodiless?
 			return 0
-		elsif self.body.respond_to?( :bytesize )
-			return self.body.bytesize
-		elsif self.body.respond_to?( :seek ) && self.body.respond_to?( :tell )
-			starting_pos = self.body.tell
-			self.body.seek( 0, IO::SEEK_END )
-			length = self.body.tell - starting_pos
-			self.body.seek( starting_pos, IO::SEEK_SET )
-
-			return length
+		elsif self.body.pos.nonzero? && !self.body.eof?
+			return self.body.size - self.body.pos
 		else
-			raise Mongrel2::ResponseError,
-				"No way to calculate the content length of the response (a %s)." %
-				[ self.body.class.name ]
+			return self.body.size
 		end
 	end
 
@@ -219,10 +216,11 @@ class Mongrel2::HTTPResponse < Mongrel2::Response
 
 	### Return the details to include in the contents of the #inspected object.
 	def inspect_details
-		return %Q{%s -- %d headers, %0.2fK body} % [
+		return %Q{%s -- %d headers, %0.2fK body (%p)} % [
 			self.status_line,
 			self.headers.length,
 			(self.get_content_length / 1024.0),
+			self.body,
 		]
 	end
 
