@@ -125,6 +125,8 @@ class Mongrel2::Request
 		elsif !body.respond_to?( :read )
 			self.log.info "Wrapping non-IO (%p) body in a StringIO" % [ body.class ]
 			@body = StringIO.new( body, 'r+b' )
+		else
+			@body = body
 		end
 
 		@response  = nil
