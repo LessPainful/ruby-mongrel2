@@ -105,7 +105,7 @@ class Mongrel2::Connection
 
 		self.log.debug "Fetching next request (PULL)"
 		data = self.request_sock.recv
-		self.log.debug "  got request data: %p" % [ data ]
+		self.log.debug "  got %s request data: %p" % [ data.encoding.name, data ]
 		return data
 	end
 

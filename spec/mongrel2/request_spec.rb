@@ -29,6 +29,7 @@ describe Mongrel2::Request do
 
 	before( :all ) do
 		setup_logging( :fatal )
+		@factory = Mongrel2::RequestFactory.new( route: '/form' )
 	end
 
 	after( :all ) do
@@ -81,9 +82,7 @@ describe Mongrel2::Request do
 	   "don't look like HTTP ones" do
 
 		message = make_request( :headers => {'METHOD' => '!DIVULGE'} )
-		expect {
-			Mongrel2::Request.parse( message )
-		}.to raise_error( Mongrel2::UnhandledMethodError, /!DIVULGE/ )
+		expect { Mongrel2::Request.parse(message) }.to raise_error( Mongrel2::UnhandledMethodError, /!DIVULGE/ )
 	end
 
 	it "knows what kind of response it should return" do
@@ -111,6 +110,31 @@ describe Mongrel2::Request do
 
 	end
 
+
+	describe "content-type charset support" do
+
+		it "uses the charset in the content-type header, if present" do
+			body = "some data".encode( 'binary' )
+			req = @factory.post( '/form', body, content_type: 'text/plain; charset=iso-8859-1' )
+
+			req.body.string.encoding.should be( Encoding::ISO_8859_1 )
+		end
+
+		it "keeps the data as ascii-8bit if no charset is in the content-type header" do
+			body = "some data".encode( 'binary' )
+			req = @factory.post( '/form', body, content_type: 'application/octet-stream' )
+
+			req.body.string.encoding.should be( Encoding::ASCII_8BIT )
+		end
+
+		it "keeps the data as ascii-8bit if there is no content-type header" do
+			body = "some data".encode( 'binary' )
+			req = @factory.post( '/form', body )
+
+			req.body.string.encoding.should be( Encoding::ASCII_8BIT )
+		end
+
+	end
 
 	describe "framework support" do
 
@@ -168,7 +192,6 @@ describe Mongrel2::Request do
 
 		before( :all ) do
 			setup_config_db()
-			@factory = Mongrel2::RequestFactory.new( route: '/form' )
 			Mongrel2::Config::Server.create(
 				 uuid:         Mongrel2::RequestFactory::DEFAULT_TEST_UUID,
 				 access_log:   'access.log',

@@ -20,7 +20,7 @@
   </header>
 
   <section id="dump">
-		
+
 		<table>
 			<tr>
 				<th>Sender ID</th>
@@ -35,7 +35,7 @@
 				<td><?attr safelevel ?></td>
 			</tr>
 		</table>
-		
+
 		<section id="headers">
 			<header>
 				<h1>Headers</h1>
@@ -49,13 +49,14 @@
 				<?end for ?>
 			</table>
 		</section>
-		
+
 		<section id="body">
 			<header>
 				<h1>Body</h1>
 			</header>
 
-			<p><code><?escape request.body.dump ?></code></p>
+			<p><code><?escape request.body.inspect ?></code>
+				 (<?call "%0.2fKb" % request.body.size ?>, <?call request.body.external_encoding.name ?>)</p>
 		</section>
 
 		<section id="inspect">
@@ -66,7 +67,7 @@
 				</pre>
 			</header>
 		</section>
-		
+
   </section>
 
   <footer>

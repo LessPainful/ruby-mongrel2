@@ -118,17 +118,7 @@ class Mongrel2::Request
 		@headers   = Mongrel2::Table.new( headers )
 		@raw       = raw
 
-		if self.valid_upload?
-			spoolfile = self.uploaded_file
-			self.log.info "Using async spool file %s as request entity body." % [ spoolfile ]
-			@body = spoolfile.open( 'r' )
-		elsif !body.respond_to?( :read )
-			self.log.info "Wrapping non-IO (%p) body in a StringIO" % [ body.class ]
-			@body = StringIO.new( body, 'r+b' )
-		else
-			@body = body
-		end
-
+		@body      = self.make_entity_body( body )
 		@response  = nil
 	end
 
@@ -252,6 +242,35 @@ class Mongrel2::Request
 	#########
 	protected
 	#########
+
+	### Convert the entity +body+ into an IOish object, wrapping it in a StringIO if
+	### it doesn't already respond to :read, :pos, and :seek. If the request has
+	### valid 'X-Mongrel2-Upload-*' headers (the async upload API), a File object
+	### opened to the spool file will be returned instead.
+	def make_entity_body( body )
+		# :TODO: Handle Content-Encoding, too.
+
+		enc = self.headers.content_type[ /\bcharset=(\S+)/, 1 ] if self.headers.content_type
+
+		if self.valid_upload?
+			enc ||= Encoding::ASCII_8BIT
+			spoolfile = self.uploaded_file
+			self.log.info "Using async %s spool file %s as request entity body." % [ enc, spoolfile ]
+			return spoolfile.open( 'r', encoding: enc )
+
+		elsif !( body.respond_to?(:read) && body.respond_to?(:pos) && body.respond_to?(:seek) )
+			self.log.info "Wrapping non-IO (%p) body in a StringIO" % [ body.class ]
+
+			# Get the object as a String, set the encoding
+			str = body.to_s
+			str.force_encoding( enc ) if enc && str.encoding == Encoding::ASCII_8BIT
+
+			return StringIO.new( str, 'r+' )
+		else
+			return body
+		end
+	end
+
 
 	### Return the details to include in the contents of the #inspected object. This
 	### method allows other request types to provide their own details while keeping

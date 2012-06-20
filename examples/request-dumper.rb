@@ -17,6 +17,7 @@ class RequestDumper < Mongrel2::Handler
 	def initialize( * )
 		super
 		@template = Inversion::Template.load( 'request-dumper.tmpl' )
+		$SAFE = 1
 	end
 
 
