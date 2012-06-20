@@ -12,6 +12,8 @@ BEGIN {
 
 require 'rspec'
 require 'tnetstring'
+require 'tmpdir'
+require 'tempfile'
 
 require 'spec/lib/helpers'
 
@@ -157,6 +159,90 @@ describe Mongrel2::Request do
 			end
 
 			Mongrel2::Request.subclass_for_method( 'OPTIONS' ).should == subclass
+		end
+
+	end
+
+
+	describe "async upload support" do
+
+		before( :all ) do
+			setup_config_db()
+			@factory = Mongrel2::RequestFactory.new( route: '/form' )
+			Mongrel2::Config::Server.create(
+				 uuid:         Mongrel2::RequestFactory::DEFAULT_TEST_UUID,
+				 access_log:   'access.log',
+				 error_log:    'error.log',
+				 pid_file:     '/var/run/mongrel2.pid',
+				 default_host: 'localhost',
+				 port:         663,
+				 chroot:       Dir.tmpdir
+			  )
+		end
+
+		before( :each ) do
+			@spoolfile = Tempfile.new( 'mongrel2.upload', Dir.tmpdir )
+			@spoolfile.print( File.read(__FILE__) )
+			@spoolpath = @spoolfile.path.slice( Dir.tmpdir.length + 1..-1 )
+		end
+
+		it "knows if it's an 'async upload started' notification" do
+			req = @factory.post( '/form', '', x_mongrel2_upload_start: @spoolpath )
+
+			req.should be_upload_started()
+			req.should_not be_upload_done()
+		end
+
+		it "knows if it's an 'async upload done' notification" do
+			req = @factory.post( '/form', '',
+				x_mongrel2_upload_start: @spoolpath,
+				x_mongrel2_upload_done: @spoolpath )
+
+			req.should_not be_upload_started()
+			req.should be_upload_done()
+			req.should be_valid_upload()
+		end
+
+		it "knows if it's not a valid 'async upload done' notification" do
+			req = @factory.post( '/form', '',
+				x_mongrel2_upload_start: @spoolpath,
+				x_mongrel2_upload_done: '/etc/passwd' )
+
+			req.should_not be_upload_started()
+			req.should be_upload_done()
+			req.should_not be_valid_upload()
+		end
+
+		it "raises an exception if the uploaded file fetched with mismatched headers" do
+			req = @factory.post( '/form', '',
+				x_mongrel2_upload_start: @spoolpath,
+				x_mongrel2_upload_done: '/etc/passwd' )
+
+			expect {
+				req.uploaded_file
+			}.to raise_error( Mongrel2::UploadError, /upload headers/i )
+		end
+
+		it "can return a Pathname object for the uploaded file if it's valid" do
+			req = @factory.post( '/form', '',
+				x_mongrel2_upload_start: @spoolpath,
+				x_mongrel2_upload_done:  @spoolpath )
+
+			req.should be_valid_upload()
+
+			req.uploaded_file.should be_a( Pathname )
+			req.uploaded_file.to_s.should == @spoolfile.path
+		end
+
+		it "sets the body of the request to the uploaded File if it's valid" do
+			req = @factory.post( '/form', '',
+				x_mongrel2_upload_start: @spoolpath,
+				x_mongrel2_upload_done:  @spoolpath )
+
+			req.should be_valid_upload()
+
+			req.body.should be_a( File )
+			req.body.path.should == @spoolfile.path
 		end
 
 	end

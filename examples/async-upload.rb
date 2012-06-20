@@ -38,7 +38,7 @@ class AsyncUploadHandler < Mongrel2::Handler
 			[ request.uploaded_file, request.content_length, request.content_type ]
 
 		response = request.response
-		response.puts "Upload complete: %s" % [ request.uploaded_file ]
+		response.puts "Upload complete: %p" % [ request.uploaded_file ]
 		response.content_type = 'text/plain'
 
 		return response

@@ -111,14 +111,21 @@ class Mongrel2::Request
 	### and +body+. The optional +nil+ is for the raw request content, which can be useful
 	### later for debugging.
 	def initialize( sender_id, conn_id, path, headers, body='', raw=nil )
-		body = StringIO.new( body, 'r+b' ) unless body.respond_to?( :read )
 
 		@sender_id = sender_id
 		@conn_id   = Integer( conn_id )
 		@path      = path
 		@headers   = Mongrel2::Table.new( headers )
-		@body      = body
 		@raw       = raw
+
+		if self.valid_upload?
+			spoolfile = self.uploaded_file
+			self.log.info "Using async spool file %s as request entity body." % [ spoolfile ]
+			@body = spoolfile.open( 'r' )
+		elsif !body.respond_to?( :read )
+			self.log.info "Wrapping non-IO (%p) body in a StringIO" % [ body.class ]
+			@body = StringIO.new( body, 'r+b' )
+		end
 
 		@response  = nil
 	end
@@ -163,6 +170,69 @@ class Mongrel2::Request
 		return false
 	end
 
+
+	#
+	# :section: Async Upload Support
+	# See http://mongrel2.org/static/book-finalch6.html#x8-810005.5 for details.
+	#
+
+	### The Pathname, relative to Mongrel2's chroot path, of the uploaded entity body.
+	def uploaded_file
+		raise Mongrel2::UploadError, "invalid upload: upload headers don't match" unless
+			self.upload_headers_match?
+
+		server = Mongrel2::Config::Server.by_uuid( self.sender_id ).first or
+			raise Mongrel2::UploadError, "couldn't find the server %p in the config DB" %
+			[ self.sender_id ]
+
+		relpath = Pathname( self.headers.x_mongrel2_upload_done )
+		chrooted = Pathname( server.chroot ) + relpath
+
+		if chrooted.exist?
+			return chrooted
+		elsif relpath.exist?
+			return relpath
+		else
+			self.log.error "uploaded body %s not found: tried relative to cwd and server chroot (%s)" %
+				[ relpath, server.chroot ]
+			raise Mongrel2::UploadError,
+				"couldn't find the path to uploaded body."
+		end
+	end
+
+
+	### Returns +true+ if this request is an 'asynchronous upload started' notification.
+	def upload_started?
+		return self.headers.member?( :x_mongrel2_upload_start ) &&
+		       !self.headers.member?( :x_mongrel2_upload_done )
+	end
+
+
+	### Returns +true+ if this request is an 'asynchronous upload done' notification.
+	def upload_done?
+		return self.headers.member?( :x_mongrel2_upload_start ) &&
+		       self.headers.member?( :x_mongrel2_upload_done )
+	end
+
+
+	### Returns +true+ if this request is an 'asynchronous upload done' notification
+	### and the two headers match (trivial guard against forgery)
+	def upload_headers_match?
+		return self.upload_done? &&
+		       self.headers.x_mongrel2_upload_start == self.headers.x_mongrel2_upload_done
+	end
+
+
+	### Returns true if this request is an asynchronous upload, and the filename of the
+	### finished request matches the one from the starting notification.
+	def valid_upload?
+		return self.upload_done? && self.upload_headers_match?
+	end
+
+
+	#
+	# :section: Introspection Methods
+	#
 
 	### Returns a string containing a human-readable representation of the Request,
 	### suitable for debugging.

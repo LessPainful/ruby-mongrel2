@@ -159,8 +159,7 @@ module Mongrel2
 			headers = self.make_merged_headers( :POST, uri, headers )
 			rclass = Mongrel2::Request.subclass_for_method( :POST )
 
-			req = rclass.new( self.sender_id, self.conn_id.to_s, uri.to_s, headers )
-			req.body = body
+			req = rclass.new( self.sender_id, self.conn_id.to_s, uri.to_s, headers, body )
 
 			return req
 		end
@@ -175,8 +174,7 @@ module Mongrel2
 			headers = self.make_merged_headers( :PUT, uri, headers )
 			rclass = Mongrel2::Request.subclass_for_method( :PUT )
 
-			req = rclass.new( self.sender_id, self.conn_id.to_s, uri.to_s, headers )
-			req.body = body
+			req = rclass.new( self.sender_id, self.conn_id.to_s, uri.to_s, headers, body )
 
 			return req
 		end

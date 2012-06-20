@@ -100,48 +100,6 @@ class Mongrel2::HTTPRequest < Mongrel2::Request
 	end
 
 
-	#
-	# :section: Async Upload Support
-	# See http://mongrel2.org/static/book-finalch6.html#x8-810005.5 for details.
-	#
-
-	### The Pathname, relative to Mongrel2's chroot path, of the uploaded entity body.
-	def uploaded_file
-		raise Mongrel2::UploadError, "invalid upload: upload headers don't match" unless
-			self.upload_headers_match?
-		return Pathname( self.headers.x_mongrel2_upload_done )
-	end
-
-
-	### Returns +true+ if this request is an 'asynchronous upload started' notification.
-	def upload_started?
-		return self.headers.member?( :x_mongrel2_upload_start ) &&
-		       !self.headers.member?( :x_mongrel2_upload_done )
-	end
-
-
-	### Returns +true+ if this request is an 'asynchronous upload done' notification.
-	def upload_done?
-		return self.headers.member?( :x_mongrel2_upload_start ) &&
-		       self.headers.member?( :x_mongrel2_upload_done )
-	end
-
-
-	### Returns +true+ if this request is an 'asynchronous upload done' notification
-	### and the two headers match (trivial guard against forgery)
-	def upload_headers_match?
-		return self.upload_done? &&
-		       self.headers.x_mongrel2_upload_start == self.headers.x_mongrel2_upload_done
-	end
-
-
-	### Returns true if this request is an asynchronous upload, and the filename of the
-	### finished request matches the one from the starting notification.
-	def valid_upload?
-		return self.upload_done? && self.upload_headers_match?
-	end
-
-
 	#########
 	protected
 	#########

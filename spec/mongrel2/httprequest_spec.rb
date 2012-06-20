@@ -143,46 +143,6 @@ describe Mongrel2::HTTPRequest do
 			@req.remote_ip.to_s.should == '127.0.0.1'
 		end
 
-		it "knows if it's an 'async upload started' notification" do
-			@req.headers.x_mongrel2_upload_start = '/tmp/mongrel2.upload.20120503-54578-rs3l2g'
-			@req.should be_upload_started()
-			@req.should_not be_upload_done()
-		end
-
-		it "knows if it's an 'async upload done' notification" do
-			@req.headers.x_mongrel2_upload_start = '/tmp/mongrel2.upload.20120503-54578-rs3l2g'
-			@req.headers.x_mongrel2_upload_done = '/tmp/mongrel2.upload.20120503-54578-rs3l2g'
-			@req.should_not be_upload_started()
-			@req.should be_upload_done()
-			@req.should be_valid_upload()
-		end
-
-		it "knows if it's not a valid 'async upload done' notification" do
-			@req.headers.x_mongrel2_upload_start = '/tmp/mongrel2.upload.20120503-54578-rs3l2g'
-			@req.headers.x_mongrel2_upload_done = '/etc/passwd'
-			@req.should_not be_upload_started()
-			@req.should be_upload_done()
-			@req.should_not be_valid_upload()
-		end
-
-		it "raises an exception if the uploaded file fetched with mismatched headers" do
-			@req.headers.x_mongrel2_upload_start = '/tmp/mongrel2.upload.20120503-54578-rs3l2g'
-			@req.headers.x_mongrel2_upload_done = '/etc/passwd'
-
-			expect {
-				@req.uploaded_file
-			}.to raise_error( Mongrel2::UploadError, /upload headers/i )
-		end
-
-		it "can return a Pathname object for the uploaded file if it's valid" do
-			@req.headers.x_mongrel2_upload_start = '/tmp/mongrel2.upload.20120503-54578-rs3l2g'
-			@req.headers.x_mongrel2_upload_done = '/tmp/mongrel2.upload.20120503-54578-rs3l2g'
-
-			@req.should be_valid_upload()
-			@req.uploaded_file.should be_a( Pathname )
-			@req.uploaded_file.to_s.should == '/tmp/mongrel2.upload.20120503-54578-rs3l2g'
-		end
-
 	end
 
 end
