@@ -61,11 +61,20 @@ describe Mongrel2::Response do
 		expect {|b| response.each_chunk(&b) }.to yield_with_args( 'the body' )
 	end
 
-	it "wraps non-IO bodies set via the #body= accessor in a StringIO" do
+	it "wraps stringifiable bodies set via the #body= accessor in a StringIO" do
 		response = Mongrel2::Response.new( TEST_UUID, 8 )
 		response.body = 'a stringioed body'
 		response.body.should be_a( StringIO )
 		response.body.string.should == 'a stringioed body'
+	end
+
+	it "doesn't try to wrap non-strinfiable bodies in a StringIO" do
+		response = Mongrel2::Response.new( TEST_UUID, 8 )
+		testbody = Object.new
+
+		response.body = testbody
+
+		response.body.should be( testbody )
 	end
 
 	context	"an instance with default values" do
