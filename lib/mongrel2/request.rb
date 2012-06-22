@@ -141,7 +141,7 @@ class Mongrel2::Request
 	attr_reader :headers
 	alias_method :header, :headers
 
-	# The request body data, if there is any, as an IO object
+	# The request body data, if there is any, as an IO(ish) object
 	attr_reader :body
 
 	# The raw request content, if the request was parsed from mongrel2

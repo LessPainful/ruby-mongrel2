@@ -1,3 +1,17 @@
+== v0.25.0 [2012-06-20] Michael Granger <ged@FaerieMUD.org>
+
+NOTE: This revision contains non-backward-compatible changes to
+Mongrel2::Request, Mongrel2::Response, and all subclasses.
+
+- Convert request and response entity bodies to IOish objects instead of
+  Strings.
+- Finished implementation of Mongrel2 async upload API -- async-uploaded
+  entity bodies now become File entity bodies of the
+  "X-Mongrel2-Upload-Done" request.
+- Add a few newer-rfc HTTP error codes.
+- Add support for Content-type charsets.
+
+
 == v0.24.0 [2012-05-31] Michael Granger <ged@FaerieMUD.org>
 
 - Fix a bug when duping a Mongrel2::Table with immediate objects as values.
