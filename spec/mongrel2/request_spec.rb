@@ -108,6 +108,18 @@ describe Mongrel2::Request do
 			@req.response.should equal( @req.response )
 		end
 
+		it "allows the entity body to be replaced by assigning a String" do
+			@req.body = 'something else'
+			@req.body.should be_a( StringIO )
+			@req.body.string.should == 'something else'
+		end
+
+		it "doesn't try to wrap non-stringish entity body replacements in a StringIO" do
+			testobj = Object.new
+			@req.body = testobj
+			@req.body.should be( testobj )
+		end
+
 	end
 
 

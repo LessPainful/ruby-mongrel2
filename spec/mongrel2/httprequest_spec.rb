@@ -79,12 +79,6 @@ describe Mongrel2::HTTPRequest do
 		@req.should be_keepalive()
 	end
 
-	it "allows the request body to be rewritten" do
-		@req.body = 'something else'
-		@req.body.should == 'something else'
-	end
-
-
 	describe "header convenience methods" do
 
 		before( :each ) do

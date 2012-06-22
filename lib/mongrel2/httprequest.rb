@@ -32,10 +32,6 @@ class Mongrel2::HTTPRequest < Mongrel2::Request
 	###	I N S T A N C E   M E T H O D S
 	#################################################################
 
-	# Allow the entity body of the request to be modified
-	attr_writer :body
-
-
 	### Return +true+ if the request is an HTTP/1.1 request and its
 	### 'Connection' header indicates that the connection should stay
 	### open.

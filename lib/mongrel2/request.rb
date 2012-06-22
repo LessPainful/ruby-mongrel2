@@ -148,6 +148,14 @@ class Mongrel2::Request
 	attr_reader :raw
 
 
+	### Set the request's entity body to +newbody+. If +newbody+ is a String-ish object
+	### (i.e., it responds to #to_str), it will be wrapped in a StringIO in 'r+' mode).
+	def body=( newbody )
+		newbody = StringIO.new( newbody, 'a+' ) if newbody.respond_to?( :to_str )
+		@body = newbody
+	end
+
+
 	### Create a Mongrel2::Response that will respond to the same server/connection as
 	### the receiver. If you wish your specialized Request class to have a corresponding
 	### response type, you can override the Mongrel2::Request.response_class method 

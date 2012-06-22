@@ -64,8 +64,8 @@ class Mongrel2::Response
 	attr_accessor :chunksize
 
 
-	### Set the response body to +newbody+. If +newbody+ is not a IO-like object (i.e., it
-	### doesn't respond to #eof?, it will be wrapped in a StringIO in 'a+' mode).
+	### Set the response's entity body to +newbody+. If +newbody+ is a String-ish object
+	### (i.e., it responds to #to_str), it will be wrapped in a StringIO in 'a+' mode).
 	def body=( newbody )
 		newbody = StringIO.new( newbody, 'a+' ) if newbody.respond_to?( :to_str )
 		@body = newbody
