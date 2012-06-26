@@ -1,3 +1,9 @@
+== v0.26.0 [2012-06-26] Michael Granger <ged@FaerieMUD.org>
+
+- Fix the derived path to the async upload body
+- Add a default async upload handler method that cancels the upload
+
+
 == v0.25.0 [2012-06-20] Michael Granger <ged@FaerieMUD.org>
 
 NOTE: This revision contains non-backward-compatible changes to

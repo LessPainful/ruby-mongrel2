@@ -218,15 +218,20 @@ describe Mongrel2::Request do
 
 		before( :all ) do
 			setup_config_db()
-			Mongrel2::Config::Server.create(
-				 uuid:         Mongrel2::RequestFactory::DEFAULT_TEST_UUID,
-				 access_log:   'access.log',
-				 error_log:    'error.log',
-				 pid_file:     '/var/run/mongrel2.pid',
-				 default_host: 'localhost',
-				 port:         663,
-				 chroot:       Dir.tmpdir
-			  )
+
+			# Set up a test server config so the request can find the server's chroot
+			server 'specs' do
+				default_host 'localhost'
+				access_log   'access.log'
+				error_log    'error.log'
+				chroot       Dir.tmpdir
+				pid_file     '/var/run/mongrel2.pid'
+				port         8113
+
+				host 'localhost' do
+					route '/form', handler( TEST_SEND_SPEC, 'upload-handler', TEST_RECV_SPEC )
+				end
+			end
 		end
 
 		before( :each ) do

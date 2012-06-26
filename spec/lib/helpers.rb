@@ -208,6 +208,8 @@ RSpec.configure do |c|
 	c.include( Mongrel2::TestConstants )
 	c.include( Mongrel2::SpecHelpers )
 	c.include( Mongrel2::Matchers )
+
+	c.include( Mongrel2::Config::DSL )
 end
 
 # vim: set nosta noet ts=4 sw=4:
