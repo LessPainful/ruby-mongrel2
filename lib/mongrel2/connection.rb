@@ -149,6 +149,7 @@ class Mongrel2::Connection
 	### Tell the server to close the connection associated with the given +sender_id+ and
 	### +conn_id+.
 	def send_close( sender_id, conn_id )
+		self.log.info "Sending kill message to connection %d" % [ conn_id ]
 		self.send( sender_id, conn_id, '' )
 	end
 

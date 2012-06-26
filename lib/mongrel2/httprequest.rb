@@ -1,6 +1,5 @@
 #!/usr/bin/ruby
 
-require 'ipaddr'
 require 'loggability'
 
 require 'mongrel2/request' unless defined?( Mongrel2::Request )
@@ -89,13 +88,6 @@ class Mongrel2::HTTPRequest < Mongrel2::Request
 	end
 
 
-	### Fetch the original requestor IP address.
-	def remote_ip
-		ips = [ self.headers.x_forwarded_for ]
-		return IPAddr.new( ips.flatten.first )
-	end
-
-
 	#########
 	protected
 	#########
@@ -107,7 +99,7 @@ class Mongrel2::HTTPRequest < Mongrel2::Request
 			self.headers[:method],
 			self.headers.uri,
 			self.headers.version,
-			(self.body.length / 1024.0),
+			(self.body.size / 1024.0),
 		]
 	end
 

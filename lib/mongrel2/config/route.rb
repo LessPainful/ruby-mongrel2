@@ -14,6 +14,23 @@ class Mongrel2::Config::Route < Mongrel2::Config( :route )
 	#     target_id INTEGER,
 	#     target_type TEXT);
 
+
+	### Return the Route that corresponds to the given +request+.
+	def self::for_request( request )
+		pattern = request.headers.pattern
+		return self.filter( path: pattern ).first
+	end
+
+
+	#
+	# :section: Associations
+	#
+
+	##
+	# The Mongrel2::Config::Host this route belongs to.
+	many_to_one :host
+
+
 	### Fetch the route's target, which is either a Mongrel2::Config::Directory, 
 	### Mongrel2::Config::Proxy, or Mongrel2::Config::Handler object.
 	def target

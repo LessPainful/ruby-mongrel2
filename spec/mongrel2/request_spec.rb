@@ -120,6 +120,20 @@ describe Mongrel2::Request do
 			@req.body.should be( testobj )
 		end
 
+		it "provides a convenience method for fetching the requestor's IP address" do
+			@req.headers.merge!(
+				'X-Forwarded-For' => '127.0.0.1'
+			)
+			@req.remote_ip.to_s.should == '127.0.0.1'
+		end
+
+		it "fetching the requestor's IP address even when travelling via proxies" do
+			@req.headers.merge!(
+				'X-Forwarded-For' => [ '127.0.0.1', '8.8.8.8', '4.4.4.4' ]
+			)
+			@req.remote_ip.to_s.should == '127.0.0.1'
+		end
+
 	end
 
 

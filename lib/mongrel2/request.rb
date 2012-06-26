@@ -1,5 +1,6 @@
 #!/usr/bin/ruby
 
+require 'ipaddr'
 require 'stringio'
 require 'tnetstring'
 require 'yajl'
@@ -171,6 +172,13 @@ class Mongrel2::Request
 	end
 
 
+	### Fetch the original requestor IP address.
+	def remote_ip
+		ips = [ self.headers.x_forwarded_for ]
+		return IPAddr.new( ips.flatten.first )
+	end
+
+
 	#
 	# :section: Async Upload Support
 	# See http://mongrel2.org/static/book-finalch6.html#x8-810005.5 for details.
@@ -181,12 +189,12 @@ class Mongrel2::Request
 		raise Mongrel2::UploadError, "invalid upload: upload headers don't match" unless
 			self.upload_headers_match?
 
-		server = Mongrel2::Config::Server.by_uuid( self.sender_id ).first or
-			raise Mongrel2::UploadError, "couldn't find the server %p in the config DB" %
-			[ self.sender_id ]
+		route = Mongrel2::Config::Route.for_request( self ) or
+			raise Mongrel2::UploadError, "couldn't find the route config for %s" % [ self ]
+		server = route.host.server
 
 		relpath = Pathname( self.headers.x_mongrel2_upload_done )
-		chrooted = Pathname( server.chroot ) + relpath
+		chrooted = server.chroot_path + relpath
 
 		if chrooted.exist?
 			return chrooted

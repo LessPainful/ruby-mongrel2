@@ -25,9 +25,22 @@ class Mongrel2::Config::Server < Mongrel2::Config( :server )
 	#     port INTEGER,
 	#     use_ssl INTEGER default 0);
 
+	#
+	# :section: Associations
+	#
+
+	##
+	# The hosts[rdoc-ref:Mongrel2::Config::Host] that belong to this server.
 	one_to_many :hosts
+
+	##
+	# The filters[rdoc-ref:Mongrel2::Config::Filter] that will be loaded by this server.
 	one_to_many :filters
 
+
+	#
+	# :section: Dataset Methods
+	#
 
 	##
 	# Return the dataset for looking up a server by its UUID.
@@ -35,6 +48,16 @@ class Mongrel2::Config::Server < Mongrel2::Config( :server )
 	# :call-seq:
 	#    by_uuid( uuid )
 	def_dataset_method( :by_uuid ) {|uuid| filter(:uuid => uuid).limit(1) }
+
+
+	#
+	# :section: Socket/Pathname Convenience Methods
+	#
+
+	### Return a Pathname for the server's chroot directory.
+	def chroot_path
+		return Pathname( self.chroot )
+	end
 
 
 	### Return the URI for its control socket.
@@ -46,7 +69,7 @@ class Mongrel2::Config::Server < Mongrel2::Config( :server )
 		scheme, sock_path = csock_uri.split( '://', 2 )
 		self.log.debug "  chrooted socket path is: %p" % [ sock_path ]
 
-		csock_path = Pathname( self.chroot ) + sock_path
+		csock_path = self.chroot_path + sock_path
 		self.log.debug "  fully-qualified path is: %p" % [ csock_path ]
 		csock_uri = "%s://%s" % [ scheme, csock_path ]
 
@@ -63,11 +86,10 @@ class Mongrel2::Config::Server < Mongrel2::Config( :server )
 
 	### Return a Pathname for the server's PID file with its chroot directory prepended.
 	def pid_file_path
-		base = Pathname( self.chroot )
 		pidfile = self.pid_file
 		pidfile.slice!( 0, 1 ) if pidfile.start_with?( '/' )
 
-		return base + pidfile
+		return self.chroot_path + pidfile
 	end
 
 

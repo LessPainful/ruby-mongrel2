@@ -254,6 +254,17 @@ describe Mongrel2::Handler do
 		response.should be_nil()
 	end
 
+	it "cancels async upload notices by default" do
+		req = make_request( 'METHOD' => 'POST', :headers => {'x-mongrel2-upload-start' => 'uploadfile.XXX'} )
+		@request_sock.should_receive( :recv ).and_return( req )
+
+		res = OneShotHandler.new( TEST_UUID, TEST_SEND_SPEC, TEST_RECV_SPEC ).run
+
+		res.transactions.should have( 1 ).member
+		request, response = res.transactions.first
+		response.should == ''
+	end
+
 	it "re-establishes its connection when told to restart" do
 		res = OneShotHandler.new( TEST_UUID, TEST_SEND_SPEC, TEST_RECV_SPEC )
 		original_conn = res.conn

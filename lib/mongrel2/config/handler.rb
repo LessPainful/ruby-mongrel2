@@ -16,6 +16,15 @@ class Mongrel2::Config::Handler < Mongrel2::Config( :handler )
 	#    protocol TEXT DEFAULT 'json');
 
 
+	#
+	# :section: Associations
+	#
+
+	##
+	# The routes[rdoc-ref:Mongrel2::Config::Route] that refer to this Handler
+	one_to_many :routes, :key => :target_id, :conditions => { target_type: 'handler' }
+
+
 	# The list of 0mq transports Mongrel2 can use; "You need to use the
 	# ZeroMQ syntax for configuring them, but this means with one
 	# configuration format you can use handlers that are using UDP, TCP,

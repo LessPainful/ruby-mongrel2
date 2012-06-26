@@ -13,15 +13,33 @@ class Mongrel2::Config::Host < Mongrel2::Config( :host )
 	#     name TEXT,
 	#     matching TEXT);
 
+
+	#
+	# :section: Associations
+	#
+
+	##
+	# The routes[rdoc-ref:Mongrel2::Config::Route] that this host has.
 	one_to_many :routes
+
+	##
+	# The server[rdoc-ref:Mongrel2::Config::Server] this host belongs to.
 	many_to_one :server
 
+
+	#
+	# :section: Hooks
+	#
 
 	### Clean up the host's routes when it's destroyed.
 	def before_destroy
 		self.routes.each( &:destroy )
 	end
 
+
+	#
+	# :section: DSL mixin
+	#
 
 	### DSL methods for the Server context besides those automatically-generated from its
 	### columns.

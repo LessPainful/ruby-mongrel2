@@ -202,6 +202,10 @@ class Mongrel2::Handler
 			self.handle_disconnect( request )
 			return nil
 
+		elsif request.upload_started?
+			self.log.debug "async upload start!"
+			return self.handle_async_upload_start( request )
+
 		else
 			case request
 			when Mongrel2::HTTPRequest
@@ -286,6 +290,28 @@ class Mongrel2::Handler
 	### is ignored.
 	def handle_disconnect( request )
 		self.log.info "Unhandled disconnect notice."
+		return nil
+	end
+
+
+	### Handle an asynchronous upload start notification. These are sent to notify the
+	### handler that a request that exceeds the server's <tt>limits.content_length</tt>
+	### has been received. The default implementation cancels any such uploads by
+	### replying with an empty string. If the request should be accepted, your handler
+	### should override this and do nothing if the request should continue. You'll receive
+	### a new request via the regular callback when the upload completes whose entity body
+	### is open to the spooled file.
+	def handle_async_upload_start( request )
+		explanation = "If you wish to handle requests like this, either set your server's "
+		explanation << "'limits.content_length' setting to a higher value than %d, or override " %
+			 [ request.content_length ]
+		explanation << "#handle_async_upload_start."
+
+		self.log.warn "Async upload from %s dropped." % [ request.remote_ip ]
+		self.log.info( explanation )
+
+		self.conn.reply_close( request )
+
 		return nil
 	end
 
