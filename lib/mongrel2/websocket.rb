@@ -9,6 +9,11 @@ require 'mongrel2/constants'
 #
 #   class WebSocketEchoServer
 #
+#       def handle_websocket_handshake( handshake )
+#           # :TODO: Sub-protocol/protocol version checks?
+#           return handshake.response
+#       end
+#
 #       def handle_websocket( frame )
 #
 #           # Close connections that send invalid frames
@@ -191,6 +196,93 @@ module Mongrel2::WebSocket
 	# Exception raised when a frame is malformed, doesn't parse, or is otherwise invalid.
 	class FrameError < Mongrel2::WebSocket::Error; end
 
+	# Exception raised when a handshake is created with an unrequested sub-protocol.
+	class HandshakeError < Mongrel2::WebSocket::Error; end
+
+
+	# The client (request) handshake for a WebSocket opening handshake.
+	class ClientHandshake < Mongrel2::HTTPRequest
+		include Mongrel2::WebSocket::Constants
+
+		# Set this class as the one that will handle WEBSOCKET_HANDSHAKE requests
+		register_request_type( self, :WEBSOCKET_HANDSHAKE )
+
+
+		### Override the type of response returned by this request type. Since
+		### websocket handshakes are symmetrical, responses are just new
+		### Mongrel2::WebSocket::Handshakes with the same Mongrel2 sender
+		### and connection IDs.
+		def self::response_class
+			return Mongrel2::WebSocket::ServerHandshake
+		end
+
+
+		######
+		public
+		######
+
+		### The list of protocols in the handshake's Sec-WebSocket-Protocol header
+		### as an Array of Strings.
+		def protocols
+			return ( self.headers.sec_websocket_protocol || '' ).split( /\s*,\s*/ )
+		end
+
+
+		### Create a Mongrel2::WebSocket::Handshake that will respond to the same server/connection as
+		### the receiver.
+		def response( protocol=nil )
+			@response = super() unless @response
+			if protocol
+				raise Mongrel2::WebSocket::HandshakeError,
+					"attempt to create a %s handshake which isn't supported by the client." %
+					[ protocol ] unless self.protocols.include?( protocol.to_s )
+				@response.protocols = protocol
+			end
+
+			return @response
+		end
+
+	end # class ClientHandshake
+
+
+	# The server (response) handshake for a WebSocket opening handshake.
+	class ServerHandshake < Mongrel2::HTTPResponse
+		include Mongrel2::WebSocket::Constants
+
+		### Create a server handshake frame from the given client +handshake+.
+		def self::from_request( handshake )
+			self.log.debug "Creating the server handshake for client handshake %p" % [ handshake ]
+			response = super
+			response.body.truncate( 0 )
+
+			# Mongrel2 puts the negotiated key in the body of the request
+			response.headers.sec_websocket_accept = handshake.body.read
+
+			# Set up the other typical server handshake values
+			response.status = HTTP::SWITCHING_PROTOCOLS
+			response.header.upgrade = 'websocket'
+			response.header.connection = 'Upgrade'
+
+			return response
+		end
+
+
+		### The list of protocols in the handshake's Sec-WebSocket-Protocol header
+		### as an Array of Strings.
+		def protocols
+			return ( self.headers.sec_websocket_protocol || '' ).split( /\s*,\s*/ )
+		end
+
+
+		### Set the list of protocols in the handshake's Sec-WebSocket-Protocol header.
+		def protocols=( new_protocols )
+			value = Array( new_protocols ).join( ', ' )
+			self.headers.sec_websocket_protocol = value
+		end
+
+
+	end # class ServerHandshake
+
 
 	# WebSocket frame class; this is used for both requests and responses in
 	# WebSocket services.
@@ -207,7 +299,8 @@ module Mongrel2::WebSocket
 
 		### Override the type of response returned by this request type. Since
 		### WebSocket connections are symmetrical, responses are just new
-		### WebSocketFrames with the same Mongrel2 sender and connection IDs.
+		### Mongrel2::WebSocket::Frames with the same Mongrel2 sender and
+		### connection IDs.
 		def self::response_class
 			return self
 		end
@@ -448,10 +541,13 @@ module Mongrel2::WebSocket
 		end
 
 
-		### Create a Mongrel2::Response that will respond to the same server/connection as
-		### the receiver. If you wish your specialized Request class to have a corresponding
-		### response type, you can override the Mongrel2::Request.response_class method
-		### to achieve that.
+		### Create a frame in response to the receiving Frame (i.e., with the same
+		### Mongrel2 connection ID and sender). This automatically sets up the correct
+		### status, Sec-WebSocket-Accept:, Connection, and Upgrade: headers based on the
+		### receiver. If +protocol+ is non-nil, and it matches one of the
+		### values listed in 'Sec-WebSocket-Protocol', it will be set as the
+		### Handshake's Sec-WebSocket-Protocol header. If it is non-nil, but doesn't
+		### match one of the request's values, a Mongrel2::WebSocket::Error is raised.
 		def response( *flags )
 			unless @response
 				@response = super()

@@ -23,7 +23,7 @@ server 'examples' do
 	chroot       '/var/mongrel2'
 	pid_file     '/var/run/mongrel2.pid'
 
-	bind_addr    '127.0.0.1'
+	bind_addr    '0.0.0.0'
 	port         8113
 
 	# your main host

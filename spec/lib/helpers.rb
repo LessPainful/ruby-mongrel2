@@ -114,13 +114,14 @@ module Mongrel2::SpecHelpers
 		bodystring = TNetstring.dump( opts[:body] || '' )
 
 		# UUID ID PATH SIZE:HEADERS,SIZE:BODY,
-		return "%s %d %s %s%s" % [
+		data = "%s %d %s %s%s" % [
 			opts[:uuid],
 			opts[:id],
 			opts[:path],
 			headerstring,
 			bodystring,
 		]
+		return data.encode( 'binary' )
 	end
 
 
@@ -134,13 +135,14 @@ module Mongrel2::SpecHelpers
 		bodystring = TNetstring.dump( opts[:body] || '' )
 
 		# UUID ID PATH SIZE:HEADERS,SIZE:BODY,
-		return "%s %d %s %s%s" % [
+		data = "%s %d %s %s%s" % [
 			opts[:uuid],
 			opts[:id],
 			opts[:path],
 			headerstring,
 			bodystring,
 		]
+		return data.encode( 'binary' )
 	end
 
 
@@ -156,13 +158,14 @@ module Mongrel2::SpecHelpers
 		bodystring = TNetstring.dump( Yajl::Encoder.encode(opts[:body] || []) )
 
 		# UUID ID PATH SIZE:HEADERS,SIZE:BODY,
-		return "%s %d %s %s%s" % [
+		data = "%s %d %s %s%s" % [
 			opts[:uuid],
 			opts[:id],
 			opts[:path],
 			headerstring,
 			bodystring,
 		]
+		return data.encode( 'binary' )
 	end
 
 
@@ -178,13 +181,56 @@ module Mongrel2::SpecHelpers
 		bodystring = TNetstring.dump( opts[:body] || "#{TEST_XML_PATH} />" )
 
 		# UUID ID PATH SIZE:HEADERS,SIZE:BODY,
-		return "%s %d %s %s%s" % [
+		data = "%s %d %s %s%s" % [
 			opts[:uuid],
 			opts[:id],
 			opts[:path],
 			headerstring,
 			bodystring,
 		]
+		return data.encode( 'binary' )
+	end
+
+	### Make a Mongrel2 handshake request for a WebSocket route.
+	def make_websocket_handshake( opts={} )
+		opts = TEST_WEBSOCKET_REQUEST_OPTS.merge( opts )
+		headers = normalize_headers( opts, TEST_WEBSOCKET_HANDSHAKE_HEADERS )
+
+		Mongrel2.log.debug "WebSocket start handshake, headers = %p, opts = %p" % [ headers, opts ]
+
+		headerstring = TNetstring.dump( Yajl::Encoder.encode(headers) )
+		bodystring = TNetstring.dump( opts[:body] || TEST_WEBSOCKET_BODY )
+
+		# UUID ID PATH SIZE:HEADERS,SIZE:BODY,
+		data = "%s %d %s %s%s" % [
+			opts[:uuid],
+			opts[:id],
+			opts[:path],
+			headerstring,
+			bodystring,
+		]
+		return data.encode( 'binary' )
+	end
+
+	### Make a Mongrel2 frame for a WebSocket route.
+	def make_websocket_frame( opts={} )
+		opts = TEST_WEBSOCKET_REQUEST_OPTS.merge( opts )
+		headers = normalize_headers( opts, TEST_WEBSOCKET_HEADERS )
+
+		Mongrel2.log.debug "WebSocket frame, headers = %p, opts = %p" % [ headers, opts ]
+
+		headerstring = TNetstring.dump( Yajl::Encoder.encode(headers) )
+		bodystring = TNetstring.dump( opts[:body] )
+
+		# UUID ID PATH SIZE:HEADERS,SIZE:BODY,
+		data = "%s %d %s %s%s" % [
+			opts[:uuid],
+			opts[:id],
+			opts[:path],
+			headerstring,
+			bodystring,
+		]
+		return data.encode( 'binary' )
 	end
 
 end

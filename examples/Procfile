@@ -3,4 +3,4 @@ mongrel2: ruby ../bin/m2sh.rb -c examples.sqlite start
 helloworld: ruby helloworld-handler.rb
 async_upload: ruby async-upload.rb
 request_dumper: ruby request-dumper.rb
-ws: ruby ws-echo.rb
+ws: ruby -w ws-echo.rb

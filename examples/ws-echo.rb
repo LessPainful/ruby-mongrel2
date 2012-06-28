@@ -86,6 +86,18 @@ class WebSocketEchoServer < Mongrel2::Handler
 	end
 
 
+	# Handle the initial handshake. Assumes no sub-protocols or protocol version
+	# checks are necessary.
+	def handle_websocket_handshake( handshake )
+		self.log.info "Handshake from %s" % [ handshake.remote_ip ]
+
+		response = handshake.response( handshake.protocols.first )
+		@connections[ [handshake.sender_id, handshake.conn_id] ] = Time.now
+
+		return response
+	end
+
+
 	# This is the main handler for WebSocket requests. Each frame comes in as a
 	# Mongrel::WebSocket::Frame object, and then is dispatched according to what
 	# opcode it has.

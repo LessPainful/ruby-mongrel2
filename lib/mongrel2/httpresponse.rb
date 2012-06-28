@@ -169,12 +169,13 @@ class Mongrel2::HTTPResponse < Mongrel2::Response
 		headers = self.headers.dup
 
 		headers[:date] ||= Time.now.httpdate
-		headers[:content_length] ||= self.get_content_length
 
 		if self.bodiless?
+			headers.delete( :content_length )
 			headers.delete( :content_type )
 		else
-			headers[:content_type] ||= DEFAULT_CONTENT_TYPE.dup
+			headers[:content_length] ||= self.get_content_length
+			headers[:content_type]   ||= DEFAULT_CONTENT_TYPE.dup
 		end
 
 		return headers
@@ -184,11 +185,11 @@ class Mongrel2::HTTPResponse < Mongrel2::Response
 	### Get the length of the body IO. If the IO's offset is somewhere other than
 	### the beginning or end, the size of the remainder is used.
 	def get_content_length
-		if self.bodiless?
-			return 0
-		elsif self.body.pos.nonzero? && !self.body.eof?
+		if self.body.pos.nonzero? && !self.body.eof?
+			self.log.info "Calculating content length based on an offset of %d" % [ self.body.pos ]
 			return self.body.size - self.body.pos
 		else
+			self.log.debug "Calculating body size via %p" % [ self.body.method(:size) ]
 			return self.body.size
 		end
 	end

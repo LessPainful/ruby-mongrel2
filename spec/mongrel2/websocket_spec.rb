@@ -53,6 +53,69 @@ describe Mongrel2::WebSocket do
 	BINARY_DATA.force_encoding( Encoding::ASCII_8BIT )
 
 
+	describe 'ClientHandshake' do
+
+		it "is the registered request type for WEBSOCKET_HANDSHAKE requests" do
+			Mongrel2::Request.request_types[:WEBSOCKET_HANDSHAKE].should == Mongrel2::WebSocket::ClientHandshake
+		end
+
+		it "knows what subprotocols were requested" do
+			handshake = @factory.handshake( '/websock', 'echo', 'superecho' )
+			handshake.protocols.should == ['echo', 'superecho']
+		end
+
+		it "doesn't error if no subprotocols were requested" do
+			handshake = @factory.handshake( '/websock' )
+			handshake.protocols.should == []
+		end
+
+		it "can create a response WebSocket::ServerHandshake for itself" do
+			handshake = @factory.handshake( '/websock' )
+			result = handshake.response
+			handshake.body.rewind
+
+			result.should be_a( Mongrel2::WebSocket::ServerHandshake )
+			result.sender_id.should == handshake.sender_id
+			result.conn_id.should == handshake.conn_id
+			result.header.sec_websocket_accept.should == handshake.body.string
+			result.status.should == HTTP::SWITCHING_PROTOCOLS
+			result.header.connection.should =~ /upgrade/i
+			result.header.upgrade.should =~ /websocket/i
+
+			result.body.rewind
+			result.body.read.should == ''
+		end
+
+		it "can create a response WebSocket::ServerHandshake with a valid sub-protocol for itself" do
+			handshake = @factory.handshake( '/websock', 'echo', 'superecho' )
+			result = handshake.response( :superecho )
+			handshake.body.rewind
+
+			result.should be_a( Mongrel2::WebSocket::ServerHandshake )
+			result.sender_id.should == handshake.sender_id
+			result.conn_id.should == handshake.conn_id
+			result.header.sec_websocket_accept.should == handshake.body.string
+			result.status.should == HTTP::SWITCHING_PROTOCOLS
+			result.header.connection.should =~ /upgrade/i
+			result.header.upgrade.should =~ /websocket/i
+			result.protocols.should == ['superecho']
+
+			result.body.rewind
+			result.body.read.should == ''
+		end
+
+		it "raises an exception if the specified protocol is not one of the client's advertised ones" do
+			handshake = @factory.handshake( '/websock', 'echo', 'superecho' )
+
+			expect {
+				handshake.response( :map_updates )
+			}.to raise_error( Mongrel2::WebSocket::HandshakeError, /map_updates/i )
+		end
+
+	end
+
+
+
 	describe 'Frame' do
 
 		it "is the registered request type for WEBSOCKET requests" do
@@ -309,6 +372,7 @@ describe Mongrel2::WebSocket do
 		end
 
 	end
+
 
 end
 

@@ -55,7 +55,7 @@ describe Mongrel2::HTTPResponse do
 	it "returns an empty response if its status is set to NO_CONTENT" do
 		@response.puts "The response body"
 		@response.status = HTTP::NO_CONTENT
-		@response.header_data.should =~ /Content-length: 0/i
+		@response.header_data.should_not =~ /Content-length/i
 		@response.header_data.should_not =~ /Content-type/i
 		@response.to_s.should_not =~ /The response body/i
 	end
@@ -69,9 +69,10 @@ describe Mongrel2::HTTPResponse do
 	end
 
 	it "re-calculates the automatically-added headers when re-rendered" do
-		@response.header_data.should =~ /Content-length: 0/i
+		@response.header_data.should =~ /Content-length: 0\b/i
+		@response.status = HTTP::OK
 		@response << "More data!"
-		@response.header_data.should =~ /Content-length: 10/i
+		@response.header_data.should =~ /Content-length: 10\b/i
 	end
 
 	it "doesn't have a body" do

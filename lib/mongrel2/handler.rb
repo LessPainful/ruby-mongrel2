@@ -207,19 +207,18 @@ class Mongrel2::Handler
 			return self.handle_async_upload_start( request )
 
 		else
+			self.log.debug "%s request." % [ request.headers['METHOD'] ]
 			case request
+			when Mongrel2::WebSocket::ClientHandshake
+				return self.handle_websocket_handshake( request )
+			when Mongrel2::WebSocket::Frame
+				return self.handle_websocket( request )
 			when Mongrel2::HTTPRequest
-				self.log.debug "HTTP request."
 				return self.handle( request )
 			when Mongrel2::JSONRequest
-				self.log.debug "JSON message request."
 				return self.handle_json( request )
 			when Mongrel2::XMLRequest
-				self.log.debug "XML message request."
 				return self.handle_xml( request )
-			when Mongrel2::WebSocket::Frame
-				self.log.debug "WEBSOCKET message request."
-				return self.handle_websocket( request )
 			else
 				self.log.error "Unhandled request type %s (%p)" %
 					[ request.headers['METHOD'], request.class ]
@@ -279,10 +278,24 @@ class Mongrel2::Handler
 	### Handle a WebSocket frame in +request+. If not overridden, WebSocket connections are
 	### closed with a policy error status.
 	def handle_websocket( request )
-		self.log.warn "Unhandled WEBSOCKET message request (%p)" % [ request.headers.path ]
+		self.log.warn "Unhandled WEBSOCKET frame (%p)" % [ request.headers.path ]
 		res = request.response
 		res.make_close_frame( WebSocket::CLOSE_POLICY_VIOLATION )
-		return res
+		self.conn.reply( res)
+
+		self.conn.reply_close( request )
+
+		return nil
+	end
+
+
+	### Handle a WebSocket handshake HTTP +request+. If not overridden, this method drops
+	### the connection.
+	def handle_websocket_handshake( handshake )
+		self.log.warn "Unhandled WEBSOCKET_HANDSHAKE request (%p)" % [ request.headers.path ]
+		self.conn.reply_close( request )
+
+		return nil
 	end
 
 

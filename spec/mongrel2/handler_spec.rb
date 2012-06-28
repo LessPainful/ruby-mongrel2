@@ -209,6 +209,42 @@ describe Mongrel2::Handler do
 		response.should be_a( Mongrel2::Response )
 	end
 
+	it "dispatches WebSocket opening handshakes to the #handle_websocket_handshake method" do
+		ws_handler = Class.new( OneShotHandler ) do
+			def handle_websocket_handshake( handshake )
+				return handshake.response
+			end
+		end
+
+		req = make_websocket_handshake()
+		@request_sock.should_receive( :recv ).and_return( req )
+
+		res = ws_handler.new( TEST_UUID, TEST_SEND_SPEC, TEST_RECV_SPEC ).run
+
+		res.transactions.should have( 1 ).member
+		request, response = res.transactions.first
+		request.should be_a( Mongrel2::WebSocket::ClientHandshake )
+		response.should be_a( Mongrel2::WebSocket::ServerHandshake )
+	end
+
+	it "dispatches WebSocket protocol frames to the #handle_websocket method" do
+		ws_handler = Class.new( OneShotHandler ) do
+			def handle_websocket( frame )
+				return frame.response
+			end
+		end
+
+		req = make_websocket_frame()
+		@request_sock.should_receive( :recv ).and_return( req )
+
+		res = ws_handler.new( TEST_UUID, TEST_SEND_SPEC, TEST_RECV_SPEC ).run
+
+		res.transactions.should have( 1 ).member
+		request, response = res.transactions.first
+		request.should be_a( Mongrel2::WebSocket::Frame )
+		response.should be_a( Mongrel2::WebSocket::Frame )
+	end
+
 	it "continues when a ZMQ::Error is received but the connection remains open" do
 		req = make_request()
 

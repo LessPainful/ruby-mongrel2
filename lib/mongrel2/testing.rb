@@ -220,11 +220,7 @@ module Mongrel2
 
 	### A factory for generating WebSocket request objects for testing.
 	class WebSocketFrameFactory < Mongrel2::RequestFactory
-		extend Loggability
 		include Mongrel2::Constants
-
-		# Loggability API -- set up logging under the 'mongrel2' log host
-		log_to :mongrel2
 
 		# The default host
 		DEFAULT_TESTING_HOST  = 'localhost'
@@ -261,6 +257,8 @@ module Mongrel2
 			:headers       => DEFAULT_TESTING_HEADERS,
 		}
 
+		DEFAULT_HANDSHAKE_BODY = 'GR7M5bFPiY2GvVc5a7CIMErQ18Q='
+
 		# Freeze all testing constants
 		constants.each do |cname|
 			const_get(cname).freeze
@@ -284,6 +282,26 @@ module Mongrel2
 		######
 		public
 		######
+
+		### Create an initial websocket handshake request and return it.
+		def handshake( uri, *subprotocols )
+			raise "Request doesn't route through %p" % [ self.route ] unless
+				uri.start_with?( self.route )
+
+			headers = if subprotocols.last.is_a?( Hash ) then subprotocols.pop else {} end
+			headers = self.make_merged_headers( uri, 0, headers )
+			headers.delete( :flags )
+
+			unless subprotocols.empty?
+				protos = subprotocols.map( &:to_s ).join( ', ' )
+				headers.sec_websocket_protocol = protos
+			end
+
+			rclass = Mongrel2::Request.subclass_for_method( :WEBSOCKET_HANDSHAKE )
+
+			return rclass.new( self.sender_id, self.conn_id.to_s, self.route, headers, DEFAULT_HANDSHAKE_BODY.dup )
+		end
+
 
 		### Create a new request with the specified +uri+, +data+, and +flags+.
 		def create( uri, data, *flags )

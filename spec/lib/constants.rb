@@ -110,6 +110,54 @@ module Mongrel2::TestConstants # :nodoc:all
 
 
 		#
+		# WebSocket frame constants
+		#
+
+		TEST_WEBSOCKET_PATH = '/ws'
+
+		TEST_WEBSOCKET_HEADERS = {
+			 'connection'               => 'Upgrade',
+			 'FLAGS'                    => '0x8A',
+			 'host'                     => 'host.example.com:80',
+			 'METHOD'                   => 'WEBSOCKET',
+			 'origin'                   => 'http://host.example.com:80',
+			 'PATH'                     => TEST_WEBSOCKET_PATH,
+			 'PATTERN'                  => TEST_WEBSOCKET_PATH,
+			 'sec-websocket-extensions' => 'x-webkit-deflate-frame',
+			 'sec-websocket-key'        => 'SQvDVdT2SbgTg6P/lSZo7Q==',
+			 'sec-websocket-protocol'   => 'echo',
+			 'sec-websocket-version'    => '13',
+			 'upgrade'                  => 'websocket',
+			 'URI'                      => TEST_WEBSOCKET_PATH,
+			 'VERSION'                  => 'HTTP/1.1',
+			 'x-forwarded-for'          => '127.0.0.2',
+		}
+		TEST_WEBSOCKET_HANDSHAKE_HEADERS = {
+			'connection'               => 'Upgrade',
+			'host'                     => 'host.example.com:80',
+			'METHOD'                   => 'WEBSOCKET_HANDSHAKE',
+			'origin'                   => 'http://host.example.com:80',
+			'PATH'                     => TEST_WEBSOCKET_PATH,
+			'PATTERN'                  => TEST_WEBSOCKET_PATH,
+			'sec-websocket-extensions' => 'x-webkit-deflate-frame',
+			'sec-websocket-key'        => 'SQvDVdT2SbgTg6P/lSZo7Q==',
+			'sec-websocket-protocol'   => 'echo',
+			'sec-websocket-version'    => '13',
+			'upgrade'                  => 'websocket',
+			'URI'                      => TEST_WEBSOCKET_PATH,
+			'VERSION'                  => 'HTTP/1.1',
+			'x-forwarded-for'          => '127.0.0.2',
+		}
+		TEST_WEBSOCKET_BODY = 'GR7M5bFPiY2GvVc5a7CIMErQ18Q='
+		TEST_WEBSOCKET_REQUEST_OPTS = {
+			:uuid    => TEST_UUID,
+			:id      => TEST_ID,
+			:path    => TEST_WEBSOCKET_PATH,
+			:body    => '',
+		}
+
+
+		#
 		# HTTP constants
 		#
 
