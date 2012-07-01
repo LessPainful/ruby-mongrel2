@@ -186,7 +186,7 @@ class Mongrel2::M2SHCommand
 				text ''
 
 				text 'Global Options'
-				opt :config, "Specify the configfile to use.",
+				opt :config, "Specify the config database to use.",
 					:default => DEFAULT_CONFIG_URI
 				opt :sudo, "Use 'sudo' to run the mongrel2 server."
 				opt :port, "Reset the server port to <i> before starting it.",
@@ -588,6 +588,43 @@ class Mongrel2::M2SHCommand
 	usage :running, "[server]"
 
 
+	### The 'bootstrap' command.
+	def bootstrap_command( *args )
+		scriptname = args.shift || DEFAULT_CONFIG_SCRIPT
+		template   = Mongrel2::DATA_DIR + 'config.rb.in'
+		data       = template.read
+
+		data.gsub!( /%% PWD %%/, Dir.pwd )
+
+		header "Writing a config-generation script to %s" % [ scriptname ]
+		File.open( scriptname, File::WRONLY|File::EXCL|File::CREAT, 0755, encoding: 'utf-8' ) do |fh|
+			fh.print( data )
+		end
+		message "Done."
+	end
+	help :bootstrap, "Generate a basic config-generation script."
+	usage :boostrap, "[scriptname]"
+
+
+	### The 'quickstart' command.
+	def quickstart_command( *args )
+		configfile = 'config.rb'
+
+		header "Quickstart!"
+		self.bootstrap_command( configfile )
+		edit( configfile )
+		self.load_command( configfile )
+
+		message '---'
+		header "Point a browser at: "
+		message '---'
+
+		self.start_command()
+	end
+	help :quickstart, "Set up a basic mongrel2 server and run it."
+	usage :quickstart
+
+
 	### The 'version' command
 	def version_command( *args )
 		message( "<%= color 'Version:', :header %> " + Mongrel2.version_string(true) )
@@ -598,6 +635,10 @@ class Mongrel2::M2SHCommand
 	#
 	# Utility methods
 	#
+
+	#######
+	private
+	#######
 
 	### Output normal output
 	def message( *parts )
@@ -675,6 +716,19 @@ class Mongrel2::M2SHCommand
 
 		return server
 	end
+
+
+	### Invoke the user's editor on the given +filename+ and return the exit code
+	### from doing so.
+	def edit( filename )
+		editor = ENV['EDITOR'] || ENV['VISUAL'] || DEFAULT_EDITOR
+		system editor, filename.to_s
+		unless $?.success? || editor =~ /vim/i
+			raise "Editor exited with an error status (%d)" % [ $?.exitstatus ]
+		end
+	end
+
+
 
 end # class Mongrel2::M2SHCommand
 

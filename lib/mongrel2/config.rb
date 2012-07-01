@@ -28,6 +28,7 @@ end
 
 require 'mongrel2' unless defined?( Mongrel2 )
 require 'mongrel2/table'
+require 'mongrel2/constants'
 
 module Mongrel2
 
@@ -46,6 +47,7 @@ module Mongrel2
 	#
 	class Config < Sequel::Model
 		extend Loggability
+		include Mongrel2::Constants
 
 		# Loggability API -- set up logging under the 'mongrel2' log host
 		log_to :mongrel2
@@ -62,13 +64,6 @@ module Mongrel2
 			:configdb => Mongrel2::DEFAULT_CONFIG_URI,
 		}
 		DEFAULTS = CONFIG_DEFAULTS
-
-		# The Pathname of the data directory
-		DATA_DIR = if Gem.datadir( 'mongrel2' )
-				Pathname( Gem.datadir('mongrel2') )
-			else
-				Pathname( __FILE__ ).dirname.parent.parent + 'data/mongrel2'
-			end
 
 		# The Pathname of the SQL file used to create the config database
 		CONFIG_SQL    = DATA_DIR + 'config.sql'

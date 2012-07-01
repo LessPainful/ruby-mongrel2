@@ -8,6 +8,7 @@ README.rdoc
 Rakefile
 bin/m2sh.rb
 data/mongrel2/bootstrap.html
+data/mongrel2/config.rb.in
 data/mongrel2/config.sql
 data/mongrel2/css/master.css
 data/mongrel2/js/websock-test.js

@@ -17,13 +17,52 @@ databases in pure Ruby, a Control port interface object, and handler classes
 for creating applications or higher-level frameworks.
 
 
-== Installation
+== Installation and Setup
 
-    gem install mongrel2
+Install mongrel2:
+
+  $ {brew,port,portmaster,apt-get install,etc} mongrel2
+
+Install the mongrel2 gem:
+
+  $ gem install mongrel2
+
+Dump a config database generation script into the current working directory:
+
+  $ m2sh.rb bootstrap
+
+Edit the generated file:
+
+  $ $EDITOR config.rb
+
+Create a config database from the Ruby config:
+
+  $ m2sh.rb load config.rb
+
+Start the server:
+
+  $ m2sh.rb start
+
+Or combine <tt>bootstrap</tt>, <tt>load</tt>, and <tt>start</tt> all into one
+command:
+
+  $ m2sh.rb quickstart
 
 
-This library uses Jeremy Hinegardner's 'amalgalite' library for the config ORM
-classes, but it will also fall back to using the sqlite3 library instead:
+== Usage
+
+The library consists of three major parts: the Config ORM classes, the
+Handler classes, and the Control class.
+
+=== Config ORM Classes
+
+There's one class per table like with most ORMs, a Mongrel2::Config::DSL mixin
+for adding the Ruby configuration DSL to your namespace, and the top-level
+Mongrel2::Config class, which manages the database connection, installs the
+schema, etc.
+
+The ORM classes use Jeremy Hinegardner's 'amalgalite' library, but it will
+also fall back to using the sqlite3 library instead:
 
     # Loading the sqlite3 library explicitly
     $ rspec -rsqlite3 -cfp spec
@@ -41,18 +80,6 @@ classes, but it will also fall back to using the sqlite3 library instead:
     Finished in 3.67 seconds
     102 examples, 0 failures
 
-
-== Usage
-
-The library consists of three major parts: the Config ORM classes, the
-Handler classes, and the Control class.
-
-=== Config ORM Classes
-
-There's one class per table like with most ORMs, a Mongrel2::Config::DSL mixin
-for adding the Ruby configuration DSL to your namespace, and the top-level
-Mongrel2::Config class, which manages the database connection, installs the
-schema, etc.
 
 * Mongrel2::Config
   * Mongrel2::Config::DSL

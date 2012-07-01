@@ -8,8 +8,20 @@ require 'mongrel2' unless defined?( Mongrel2 )
 # A collection of constants that are shared across the library
 module Mongrel2::Constants
 
+	# The Pathname of the data directory
+	DATA_DIR = if ENV['MONGREL2_DATADIR']
+			Pathname( ENV['MONGREL2_DATADIR'] )
+		elsif Gem.datadir( 'mongrel2' )
+			Pathname( Gem.datadir('mongrel2') )
+		else
+			Pathname( __FILE__ ).dirname.parent.parent + 'data/mongrel2'
+		end
+
 	# The path to the default Sqlite configuration database
 	DEFAULT_CONFIG_URI = 'config.sqlite'
+
+	# The default name of the config-generation script
+	DEFAULT_CONFIG_SCRIPT = 'config.rb'
 
 	# The default URI of the control socket
 	DEFAULT_CONTROL_SOCKET = 'ipc://run/control'
