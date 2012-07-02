@@ -20,7 +20,7 @@ module Mongrel2
 	abort "\n\n>>> Mongrel2 requires Ruby 1.9.2 or later. <<<\n\n" if RUBY_VERSION < '1.9.2'
 
 	# Library version constant
-	VERSION = '0.26.0'
+	VERSION = '0.27.0'
 
 	# Version-control revision constant
 	REVISION = %q$Revision$

@@ -1,3 +1,9 @@
+== v0.27.0 [2012-07-02] Michael Granger <ged@FaerieMUD.org>
+
+- Adds support for websocket handshake in 'develop' branch.
+- Adds 'bootstrap' and 'quickstart' commands to m2sh.rb.
+
+
 == v0.26.0 [2012-06-26] Michael Granger <ged@FaerieMUD.org>
 
 - Fix the derived path to the async upload body
