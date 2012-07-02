@@ -15,7 +15,7 @@ require 'mongrel2' unless defined?( Mongrel2 )
 # then encodes and sends Mongrel2::Response objects back to the server.
 #
 # == References
-# * http://mongrel2.org/static/mongrel2-manual.html#x1-700005.3
+# * http://mongrel2.org/static/book-finalch6.html#x8-710005.3
 class Mongrel2::Connection
 	extend Loggability
 

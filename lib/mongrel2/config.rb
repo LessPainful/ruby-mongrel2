@@ -43,7 +43,7 @@ module Mongrel2
 	# plugins.
 	#
 	# == References
-	# * http://mongrel2.org/static/mongrel2-manual.html#x1-250003.4
+	# * http://mongrel2.org/static/book-finalch4.html#x6-260003.4
 	#
 	class Config < Sequel::Model
 		extend Loggability

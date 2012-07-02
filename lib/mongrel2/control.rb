@@ -11,7 +11,7 @@ require 'mongrel2' unless defined?( Mongrel2 )
 # An interface to the Mongrel2 control port.
 #
 # == References
-# (http://mongrel2.org/static/mongrel2-manual.html#x1-380003.8)
+# (http://mongrel2.org/static/book-finalch4.html#x6-390003.8)
 class Mongrel2::Control
 	extend Loggability
 

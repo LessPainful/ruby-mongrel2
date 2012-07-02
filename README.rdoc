@@ -109,6 +109,7 @@ Mongrel2 sends:
 * Mongrel2::HTTPRequest
 * Mongrel2::JSONRequest
 * Mongrel2::XMLRequest
+* Mongrel2::WebSocket::ClientHandshake
 * Mongrel2::WebSocket::Frame
 
 These are all {overridable}[rdoc-ref:Mongrel2::Request.register_request_type]
@@ -121,17 +122,20 @@ handlers.
 === The Control Class
 
 The Mongrel2::Control class is an object interface to {the Mongrel2 control
-port}[http://mongrel2.org/static/mongrel2-manual.html#x1-390003.8]. It can be
+port}[http://mongrel2.org/static/book-finalch4.html#x6-390003.8]. It can be
 used to stop and restart the server, check its status, etc.
 
 
 === Other Classes
 
-There are a few other classes and modules work checking out, too:
+There are a few other classes and modules worth checking out, too:
 
-* Mongrel2::Table
-* Mongrel2::Constants
-* Mongrel2::Loggable
+Mongrel2::Table::
+  A hash-like data structure for headers, etc.
+Mongrel2::Constants::
+  A collection of convenience constants for Mongrel2 handlers.
+Mongrel2::RequestFactory::
+  A factory for generating fixtured requests of various types for testing.
 
 
 == Contributing

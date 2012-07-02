@@ -12,13 +12,38 @@ require 'mongrel2/request'
 
 module Mongrel2
 
-	### A collection of helper functions that are generally useful
-	### for testing Mongrel2::Handlers.
+	# A collection of helper functions that are generally useful
+	# for testing Mongrel2::Handlers.
 	module SpecHelpers
 	end # module SpecHelpers
 
 
-	### A factory for generating Mongrel2::Request objects for testing.
+	# A factory for generating Mongrel2::Request objects for testing.
+	#
+	# Usage:
+	#
+	#   require 'mongrel2/testing'
+	#
+	#   describe "MyHandler" do
+	#       before( :all ) do
+	#           @factory = Mongrel2::RequestFactory.
+	#               new( sender_id: 'my-handler',
+	#                    route: '/api/v1',
+	#                    headers: {accept: 'application/json'} )
+	#       end
+	#
+	#       before( :each ) do
+	#           @app = MyHandler.new( 'my-handler', 'tcp://0.0.0.0:5556',
+	#                                 'tcp://0.0.0.0:5555' )
+	#       end
+	#
+	#       it "handles a JSON request for GET /" do
+	#           request = @factory.get( '/api/v1' )
+	#           response = @app.dispatch_request( request )
+	#           #...
+	#       end
+	#   end
+	#
 	class RequestFactory
 		extend Loggability
 
@@ -218,7 +243,8 @@ module Mongrel2
 	end # RequestFactory
 
 
-	### A factory for generating WebSocket request objects for testing.
+	# A factory for generating WebSocket request objects for testing.
+	#
 	class WebSocketFrameFactory < Mongrel2::RequestFactory
 		include Mongrel2::Constants
 
