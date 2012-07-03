@@ -14,7 +14,6 @@ data/mongrel2/css/master.css
 data/mongrel2/js/websock-test.js
 data/mongrel2/mimetypes.sql
 data/mongrel2/websock-test.html
-examples/.env
 examples/Procfile
 examples/README.txt
 examples/async-upload.rb
