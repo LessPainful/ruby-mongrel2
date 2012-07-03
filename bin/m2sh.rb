@@ -2,7 +2,6 @@
 
 require 'uri'
 require 'pathname'
-require 'shellwords'
 require 'fileutils'
 require 'tnetstring'
 require 'loggability'
@@ -23,7 +22,7 @@ require 'mongrel2/config'
 #
 #   [√]    load  Load a config.
 #   [√]  config  Alias for load.
-#   [√]   shell  Starts an interactive shell.
+#   [-]   shell  Starts an interactive shell.
 #   [√]  access  Prints the access log.
 #   [√] servers  Lists the servers in a config database.
 #   [√]   hosts  Lists the hosts in a server.
@@ -43,7 +42,8 @@ require 'mongrel2/config'
 # well), so I don't plan to implement that. The 'control' command is more-easily
 # accessed via pry+Mongrel2::Control, so I'm not going to implement that, either.
 # Everything else should be analagous to (or better than) the m2sh that comes with
-# mongrel2.
+# mongrel2. I implemented the 'shell' mode, but I found I never used it, and it
+# introduced a dependency on the Termios library, so I removed it.
 #
 class Mongrel2::M2SHCommand
 	extend ::Sysexits,
@@ -67,14 +67,8 @@ class Mongrel2::M2SHCommand
 	end
 
 
-	# Path to the default history file for 'shell' mode
-	HISTORY_FILE = Pathname( "~/.m2shrb.history" )
-
 	# Number of items to store in history by default
 	DEFAULT_HISTORY_SIZE = 100
-
-	# The prompt the 'shell' mode should show
-	PROMPT = 'mongrel2> '
 
 
 	# Class instance variables
@@ -213,7 +207,6 @@ class Mongrel2::M2SHCommand
 	def initialize( options )
 		Loggability.format_as( :color ) if $stderr.tty?
 		@options = options
-		@shellmode = false
 
 		if @options.debug
 			$DEBUG = true
@@ -234,9 +227,6 @@ class Mongrel2::M2SHCommand
 	# The Trollop options hash the command will read its configuration from
 	attr_reader :options
 
-	# True if running in shell mode
-	attr_reader :shellmode
-
 
 	# Delegate the instance #prompt method to the class method instead
 	define_method( :prompt, &self.method(:prompt) )
@@ -244,7 +234,7 @@ class Mongrel2::M2SHCommand
 
 	### Run the command with the specified +command+ and +args+.
 	def run( command, *args )
-		command ||= 'shell'
+		command ||= 'help'
 		cmd_method = nil
 
 		begin
@@ -328,71 +318,6 @@ class Mongrel2::M2SHCommand
 		Mongrel2::Config.init_database!
 	end
 	help :init, "Initialize a new empty config database."
-
-
-	### The 'shell' command.
-	def shell_command( * )
-		require 'readline'
-		require 'termios'
-		require 'shellwords'
-
-		term = Termios.getattr( $stdin )
-		@shellmode = true
-
-		# Set up the completion callback
-		# self.setup_completion
-
-		# Load saved command-line history
-		self.read_history
-
-		# Run until something sets the quit flag
-		quitting = false
-		until quitting
-			$stderr.puts
-			input = Readline.readline( PROMPT, true )
-			self.log.debug "Input is: %p" % [ input ]
-
-			# EOL makes the shell quit
-			if input.nil?
-				self.log.debug "EOL: setting quit flag"
-				quitting = true
-
-			# Blank input -- just reprompt
-			elsif input == ''
-				self.log.debug "No command. Re-displaying the prompt."
-
-			# Parse everything else into command + args
-			else
-				self.log.debug "Dispatching input: %p" % [ input ]
-				command, *args = Shellwords.split( input )
-
-				# Don't allow recursive shells
-				if command == 'shell'
-					error "Already in a shell."
-					next
-				end
-
-				begin
-					self.run( command, *args )
-				rescue => err
-					error "%p: %s" % [ err.class, err.message ]
-					err.backtrace.each do |frame|
-						self.log.debug "  " + frame
-					end
-				end
-			end
-		end
-
-		message "\nSaving history...\n"
-		self.save_history
-
-		message "done."
-
-	ensure
-		@shellmode = false
-		Termios.tcsetattr( $stdin, Termios::TCSANOW, term )
-	end
-	help :shell, "Start the program in interactive mode."
 
 
 	### The 'access' command
@@ -511,16 +436,10 @@ class Mongrel2::M2SHCommand
 			server.save
 		end
 
-		# Run the command, waiting for it to finish if invoked from shell mode, or
-		# execing it if not.
 		cmd = [ mongrel2, Mongrel2::Config.dbname.to_s, server.uuid ]
 		cmd.unshift( 'sudo' ) if self.options.sudo
 
-		if @shellmode
-			system( *cmd )
-		else
-			exec( *cmd )
-		end
+		exec( *cmd )
 	end
 	help :start, "Starts a server."
 	usage :start, <<-END_USAGE
