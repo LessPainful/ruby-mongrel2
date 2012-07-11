@@ -25,6 +25,71 @@ class Mongrel2::Config::Server < Mongrel2::Config( :server )
 	#     port INTEGER,
 	#     use_ssl INTEGER default 0);
 
+	##
+	# :method: uuid
+	# Get the server identifier, which is typically a UUID, but can
+	# in reality be any string of alphanumeric characters and dashes.
+
+	##
+	# :method: uuid=( newuuid )
+	# Set the server identifier.
+
+	### Get the path to the server's access log as a Pathname
+	def access_log
+		return Pathname( super )
+	end
+
+
+	### Get the path to the server's error log as a Pathname
+	def error_log
+		return Pathname( super )
+	end
+
+
+	### Return a Pathname for the server's chroot directory.
+	def chroot
+		return Pathname( super )
+	end
+	alias_method :chroot_path, :chroot
+
+
+	### The path to the server's PID file.
+	def pid_file
+		return Pathname( super )
+	end
+
+
+	##
+	# :method: default_host
+	# Get the name of the default virtualhost for the server. If none
+	# of the hosts' names (or matching pattern) matches the request's Host:
+	# header, the default_host will be used.
+
+	##
+	# :method: name
+	# The huamn-readable name of the server.
+
+	##
+	# :method: bind_addr
+	# The address to bind to on startup.
+
+	##
+	# :method: port
+	# The port to listen on.
+
+
+	### Returns +true+ if the server uses SSL.
+	def use_ssl?
+		return self.use_ssl.nonzero?
+	end
+
+
+	### If +enabled+, the server will use SSL.
+	def use_ssl=( enabled )
+		super( enabled ? 1 : 0 )
+	end
+
+
 	#
 	# :section: Associations
 	#
@@ -53,12 +118,6 @@ class Mongrel2::Config::Server < Mongrel2::Config( :server )
 	#
 	# :section: Socket/Pathname Convenience Methods
 	#
-
-	### Return a Pathname for the server's chroot directory.
-	def chroot_path
-		return Pathname( self.chroot )
-	end
-
 
 	### Return the URI for its control socket.
 	def control_socket_uri
