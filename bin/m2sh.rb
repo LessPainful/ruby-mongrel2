@@ -439,6 +439,12 @@ class Mongrel2::M2SHCommand
 		cmd = [ mongrel2, Mongrel2::Config.dbname.to_s, server.uuid ]
 		cmd.unshift( 'sudo' ) if self.options.sudo
 
+		url = "http%s://%s:%d" % [
+			server.use_ssl? ? 's' : '',
+			server.bind_addr,
+			server.port,
+		]
+		header "Starting mongrel2 at: #{url}"
 		exec( *cmd )
 	end
 	help :start, "Starts a server."
