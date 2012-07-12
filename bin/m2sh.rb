@@ -539,11 +539,6 @@ class Mongrel2::M2SHCommand
 		self.bootstrap_command( configfile )
 		edit( configfile )
 		self.load_command( configfile )
-
-		message '---'
-		header "Point a browser at: "
-		message '---'
-
 		self.start_command()
 	end
 	help :quickstart, "Set up a basic mongrel2 server and run it."
