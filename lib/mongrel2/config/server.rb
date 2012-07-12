@@ -36,26 +36,30 @@ class Mongrel2::Config::Server < Mongrel2::Config( :server )
 
 	### Get the path to the server's access log as a Pathname
 	def access_log
-		return Pathname( super )
+		path = super or return nil
+		return Pathname( path )
 	end
 
 
 	### Get the path to the server's error log as a Pathname
 	def error_log
-		return Pathname( super )
+		path = super or return nil
+		return Pathname( path )
 	end
 
 
 	### Return a Pathname for the server's chroot directory.
 	def chroot
-		return Pathname( super )
+		path = super or return nil
+		return Pathname( path )
 	end
 	alias_method :chroot_path, :chroot
 
 
 	### The path to the server's PID file.
 	def pid_file
-		return Pathname( super )
+		path = super or return nil
+		return Pathname( path )
 	end
 
 
@@ -86,7 +90,11 @@ class Mongrel2::Config::Server < Mongrel2::Config( :server )
 
 	### If +enabled+, the server will use SSL.
 	def use_ssl=( enabled )
-		super( enabled ? 1 : 0 )
+		if !enabled || enabled == 0
+			super( 0 )
+		else
+			super( 1 )
+		end
 	end
 
 
@@ -146,7 +154,7 @@ class Mongrel2::Config::Server < Mongrel2::Config( :server )
 	### Return a Pathname for the server's PID file with its chroot directory prepended.
 	def pid_file_path
 		pidfile = self.pid_file
-		pidfile.slice!( 0, 1 ) if pidfile.start_with?( '/' )
+		pidfile = Pathname( pidfile.to_s[1..-1] ) unless pidfile.relative?
 
 		return self.chroot_path + pidfile
 	end

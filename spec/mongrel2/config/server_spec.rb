@@ -105,5 +105,11 @@ describe Mongrel2::Config::Server do
 		pidfile.to_s.should == '/usr/local/www/run/mongrel2.pid'
 	end
 
+	it "has a predicate that understands the use_ssl value" do
+		@server.use_ssl.should be_false()
+		@server.use_ssl = true
+		@server.use_ssl.should be_true()
+	end
+
 end
 
