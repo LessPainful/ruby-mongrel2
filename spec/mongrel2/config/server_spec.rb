@@ -102,7 +102,7 @@ describe Mongrel2::Config::Server do
 	it "knows what the Pathname of its PID file is" do
 		pidfile = @server.pid_file_path
 		pidfile.should be_a( Pathname )
-		pidfile.to_s.should == '/usr/local/www/run/mongrel2.pid'
+		pidfile.to_s.should == '/run/mongrel2.pid'
 	end
 
 	it "has a predicate that understands the use_ssl value" do

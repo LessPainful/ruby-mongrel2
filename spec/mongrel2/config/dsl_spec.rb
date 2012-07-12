@@ -63,9 +63,9 @@ describe Mongrel2::Config::DSL do
 			result.should be_a( Mongrel2::Config::Server )
 			result.uuid.should == '965A7196-99BC-46FA-945B-3478AE92BFB5'
 			result.name.should == 'Intranet'
-			result.chroot.should == Pathname('/service/mongrel2')
-			result.access_log.should == Pathname('/var/log/access')
-			result.error_log.should == Pathname('/var/log/errors')
+			result.chroot.should == '/service/mongrel2'
+			result.access_log.should == '/var/log/access'
+			result.error_log.should == '/var/log/errors'
 		end
 	end
 

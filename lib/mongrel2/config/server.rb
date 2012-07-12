@@ -34,31 +34,47 @@ class Mongrel2::Config::Server < Mongrel2::Config( :server )
 	# :method: uuid=( newuuid )
 	# Set the server identifier.
 
+	##
+	# :method: access_log
+	# Get the path to the server's access log as a String.
+
 	### Get the path to the server's access log as a Pathname
-	def access_log
-		path = super or return nil
+	def access_log_path
+		path = self.access_log or return nil
 		return Pathname( path )
 	end
 
+
+	##
+	# :method: error_log
+	# Get the path tot he server's error log as a String.
 
 	### Get the path to the server's error log as a Pathname
-	def error_log
-		path = super or return nil
+	def error_log_path
+		path = self.error_log or return nil
 		return Pathname( path )
 	end
 
+
+	##
+	# :method: chroot
+	# Get the name of the directory Mongrel2 will chroot to if run as root
+	# as a String.
 
 	### Return a Pathname for the server's chroot directory.
-	def chroot
-		path = super or return nil
+	def chroot_path
+		path = self.chroot or return nil
 		return Pathname( path )
 	end
-	alias_method :chroot_path, :chroot
 
 
-	### The path to the server's PID file.
-	def pid_file
-		path = super or return nil
+	##
+	# :method: pid_file
+	# Get the path to the server's PID file as a String.
+
+	### The path to the server's PID file as a Pathname.
+	def pid_file_path
+		path = self.pid_file or return nil
 		return Pathname( path )
 	end
 
@@ -148,15 +164,6 @@ class Mongrel2::Config::Server < Mongrel2::Config( :server )
 	### Return the Mongrel2::Control object for the server's control socket.
 	def control_socket
 		return Mongrel2::Control.new( self.control_socket_uri )
-	end
-
-
-	### Return a Pathname for the server's PID file with its chroot directory prepended.
-	def pid_file_path
-		pidfile = self.pid_file
-		pidfile = Pathname( pidfile.to_s[1..-1] ) unless pidfile.relative?
-
-		return self.chroot_path + pidfile
 	end
 
 
