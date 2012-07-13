@@ -26,6 +26,23 @@ class Mongrel2::Config::Server < Mongrel2::Config( :server )
 	#     use_ssl INTEGER default 0);
 
 	##
+	# Return the dataset for looking up a server by its UUID.
+	# :singleton-method: by_uuid
+	# :call-seq:
+	#    by_uuid( uuid )
+	def_dataset_method( :by_uuid ) {|uuid| filter(:uuid => uuid).limit(1) }
+
+
+	##
+	# The hosts[rdoc-ref:Mongrel2::Config::Host] that belong to this server.
+	one_to_many :hosts
+
+	##
+	# The filters[rdoc-ref:Mongrel2::Config::Filter] that will be loaded by this server.
+	one_to_many :filters
+
+
+	##
 	# :method: uuid
 	# Get the server identifier, which is typically a UUID, but can
 	# in reality be any string of alphanumeric characters and dashes.
@@ -114,35 +131,6 @@ class Mongrel2::Config::Server < Mongrel2::Config( :server )
 	end
 
 
-	#
-	# :section: Associations
-	#
-
-	##
-	# The hosts[rdoc-ref:Mongrel2::Config::Host] that belong to this server.
-	one_to_many :hosts
-
-	##
-	# The filters[rdoc-ref:Mongrel2::Config::Filter] that will be loaded by this server.
-	one_to_many :filters
-
-
-	#
-	# :section: Dataset Methods
-	#
-
-	##
-	# Return the dataset for looking up a server by its UUID.
-	# :singleton-method: by_uuid
-	# :call-seq:
-	#    by_uuid( uuid )
-	def_dataset_method( :by_uuid ) {|uuid| filter(:uuid => uuid).limit(1) }
-
-
-	#
-	# :section: Socket/Pathname Convenience Methods
-	#
-
 	### Return the URI for its control socket.
 	def control_socket_uri
 		# Find the control socket relative to the server's chroot
@@ -167,15 +155,18 @@ class Mongrel2::Config::Server < Mongrel2::Config( :server )
 	end
 
 
-	#
-	# :section: Validation Callbacks
-	#
-
 	### Sequel validation callback: add errors if the record is invalid.
 	def validate
 		self.validates_presence [ :access_log, :error_log, :pid_file, :default_host, :port ],
 			message: 'is missing or nil'
 	end
+
+
+	### Stringification method -- return a human-readable description of the server.
+	def to_s
+		return "%s {%s} %s:%d" % [ self.name, self.uuid, self.bind_addr, self.port ]
+	end
+
 
 
 	### DSL methods for the Server context besides those automatically-generated from its

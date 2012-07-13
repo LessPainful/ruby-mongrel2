@@ -194,6 +194,7 @@ module Mongrel2
 
 			# Force the associations to reset
 			self.db = db
+			self.log_action( "Initialized the config database." )
 		end
 
 
@@ -208,6 +209,14 @@ module Mongrel2
 				return nil
 			end
 		end
+
+
+		### Log an entry to the commit log with the given +what+, +why+, +where+, and +how+ values
+		### and return it after it's saved.
+		def self::log_action( what, why=nil, where=nil, how=nil )
+			Mongrel2::Config::Log.log_action( what, why, where, how )
+		end
+
 
 
 		#########

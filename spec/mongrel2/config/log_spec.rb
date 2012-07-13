@@ -68,8 +68,7 @@ describe Mongrel2::Config::Log do
 				what:        'what',
 				location:    'location',
 				happened_at: Time.at( 1315598592 ),
-				how:         'how',
-				why:         'why'
+				how:         'how'
 			)
 		end
 
@@ -83,8 +82,23 @@ describe Mongrel2::Config::Log do
 				\[who\] \s
 				@location \s
 				how: \s
+				what
+				$
+			}x
+		end
+
+		it "stringifies with a reason if it has one" do
+			@log.why = 'Because'
+
+			# 2011-09-09 20:29:47 -0700 [mgranger] @localhost m2sh: load etc/mongrel2.conf (updating)
+			@log.to_s.should =~ %r{
+				^
+				(?-x:\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [\+\-]\d{4} )
+				\[who\] \s
+				@location \s
+				how: \s
 				what \s
-				\(why\)
+				\(Because\)
 				$
 			}x
 		end

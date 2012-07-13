@@ -38,11 +38,44 @@ class Mongrel2::Config::Log < Mongrel2::Config( :log )
 
 	# :todo: Correct the happened_at, which is set in UTC, but fetched in localtime.
 
+	##
+	# :method: id
+	# Get the ID of the log entry
+
+	##
+	# :method: who
+	# Get "who" was reponsible for the event.
+
+	##
+	# :method: what
+	# Get a description of "what" happened
+
+	##
+	# :method: location
+	# Get the "where" of the event.
+
+	##
+	# :method: happened_at
+	# Get the timestamp of the event.
+
+	##
+	# :method: how
+	# Get a description of "how" the event happened.
+
+	##
+	# :method: why
+	# Get a description of "why" the event happened.
+
+
 
 	### Stringify the log entry and return it.
 	def to_s
 		# 2011-09-09 19:35:40 [who] @where how: what (why)
-		return "%{happened_at} [%{who}] @%{location} %{how}: %{what} (%{why})" % self.values
+		msg = "%{happened_at} [%{who}] @%{location} %{how}: %{what}" % self.values
+		msg += " (#{self.why})" if self.why
+		return msg
 	end
 
 end # class Mongrel2::Config::Log
+
+

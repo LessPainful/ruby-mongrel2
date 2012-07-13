@@ -185,6 +185,8 @@ class Mongrel2::M2SHCommand
 				opt :sudo, "Use 'sudo' to run the mongrel2 server."
 				opt :port, "Reset the server port to <i> before starting it.",
 					:type => :integer
+				opt :why, "Specify the reason for an action for the event log.",
+					:type => :string
 				text ''
 
 				text 'Other Options:'
@@ -292,6 +294,7 @@ class Mongrel2::M2SHCommand
 		source = File.read( configfile )
 
 		runspace.module_eval( source, configfile, 1 )
+		Mongrel2::Config.log_action( "Loaded config from #{configfile}", self.options.why )
 	end
 	help :load, "Overwrite the config database with the values from the speciifed CONFIGFILE."
 	usage :load, <<-END_USAGE
@@ -444,6 +447,8 @@ class Mongrel2::M2SHCommand
 			server.bind_addr,
 			server.port,
 		]
+
+		Mongrel2::Config.log_action( "Starting server: #{server}", self.options.why )
 		header "Starting mongrel2 at: #{url}"
 		exec( *cmd )
 	end
@@ -467,6 +472,8 @@ class Mongrel2::M2SHCommand
 		control.reload
 		control.close
 		message "done."
+
+		Mongrel2::Config.log_action( "Restarted server #{server}", self.options.why )
 	end
 	help :reload, "Reload the specified server's configuration"
 	usage :reload, "[server]"
@@ -481,6 +488,8 @@ class Mongrel2::M2SHCommand
 		control.stop
 		control.close
 		message "done."
+
+		Mongrel2::Config.log_action( "Stopped server #{server}", self.options.why )
 	end
 	help :stop, "Stop the specified server gracefully"
 	usage :stop, "[server]"
