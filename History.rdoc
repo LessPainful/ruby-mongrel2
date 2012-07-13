@@ -1,3 +1,19 @@
+== v0.29.0 [2012-07-13] Michael Granger <ged@FaerieMUD.org>
+
+- Make m2sh.rb write audit log events for modifying actions
+- Add a --why option to m2sh.rb to allow reasons for actions to be
+  logged.
+- Add a convenience delegator to Mongrel2::Config for logging an
+  action.
+- Finish Mongrel2::Config::Log method documentation
+- Remove RDoc sections from Mongrel2::Config::Server, as they made
+  stuff more difficult to find.
+- Add Mongrel2::Config::Server#to_s
+- Make stringified Log events only include parens if the event has a
+  'why' field.
+- Remove extraneous message from m2sh.rb's quickstart subcommand
+
+
 == v0.28.0 [2012-07-12] Michael Granger <ged@FaerieMUD.org>
 
 - Add Mongrel2::Config::Server pathname methods for the path 
