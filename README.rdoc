@@ -1,7 +1,6 @@
 = Ruby-Mongrel2
 
-home :: http://deveiate.org/projects/Ruby-Mongrel2/
-code :: http://repo.deveiate.org/Ruby-Mongrel2
+home :: https://bitbucket.org/ged/ruby-mongrel2
 github :: https://github.com/ged/ruby-mongrel2
 docs :: http://deveiate.org/code/mongrel2
 
@@ -141,7 +140,7 @@ Mongrel2::RequestFactory::
 == Contributing
 
 You can check out the current development source with Mercurial via its
-{Trac project}[http://deveiate.org/projects/Ruby-Mongrel2]. Or if you 
+{Bitbucket project}[https://bitbucket.org/ged/ruby-mongrel2]. Or if you 
 prefer Git, via {its Github mirror}[https://github.com/ged/ruby-mongrel2].
 
 After checking out the source, run:
