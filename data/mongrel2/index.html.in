@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Ruby-Mongrel2 QuickStart</title>
+	<style type="text/css" media="screen" title="no title" charset="utf-8">
+	html {
+		margin: 0;
+	}
+
+	body {
+		background: rgb(206,220,231); /* Old browsers */
+		background: linear-gradient(to bottom,  rgba(206,220,231,1) 0%,rgba(89,106,114,1) 100%); /* W3C */
+		color: #333;
+		margin: 0;
+		padding: 4em;
+		font-family: Menlo, Monaco, monospace;
+		font-size: 76%;
+		min-width: 785px;
+	}
+
+	footer {
+		position: absolute;
+		bottom: 5px;
+		font-size: 9px;
+		color: #666;
+	}
+
+	</style>
+	<meta charset="utf-8" />
+</head>
+<body>
+	<header>
+		<hgroup>
+			<h1>Ruby-Mongrel2 Quickstart</h1>
+		</hgroup>
+	</header>
+
+	<section>
+		<p>It Works!&trade;</p>
+
+		<p>If you have a Hello World application connected to <tt>%% HELLOWORLD_SEND_SPEC %%</tt> / 
+			<tt>%% HELLOWORLD_RECV_SPEC %%</tt>, you can 
+			<a href="%% HELLOWORLD_URI %%">run it here</a>. You should also try killing
+			the application, clicking the link, then restarting the app. Neat!</p>
+	</section>
+
+	<footer>
+		<p>Brought to you by %% VERSION %%.</p>
+	</footer>
+</body>
+</html>

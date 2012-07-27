@@ -27,7 +27,6 @@ hoespec = Hoe.spec 'mongrel2' do
 
 	self.dependency 'nokogiri',   '~> 1.5'
 	self.dependency 'sequel',     '~> 3.34'
-	self.dependency 'amalgalite', '~> 1.1'
 	self.dependency 'tnetstring', '~> 0.3'
 	self.dependency 'yajl-ruby',  '~> 1.0'
 	self.dependency 'trollop',    '~> 1.16'

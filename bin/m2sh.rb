@@ -49,7 +49,7 @@ class Mongrel2::M2SHCommand
 	extend ::Sysexits,
 	       Loggability
 	include Sysexits,
-	        Mongrel2::Constants
+			Mongrel2::Constants
 
 	# Loggability API -- set up logging under the 'strelka' log host
 	log_to :mongrel2
@@ -431,7 +431,7 @@ class Mongrel2::M2SHCommand
 	### The 'start' command
 	def start_command( *args )
 		server = find_server( args.shift )
-		mongrel2 = ENV['MONGREL2'] || 'mongrel2'
+		mongrel2 = find_mongrel2()
 
 		if options.port
 			message "Resetting %s server's port to %d" % [ server.name, options.port ]
@@ -439,7 +439,7 @@ class Mongrel2::M2SHCommand
 			server.save
 		end
 
-		cmd = [ mongrel2, Mongrel2::Config.dbname.to_s, server.uuid ]
+		cmd = [ mongrel2.to_s, Mongrel2::Config.dbname.to_s, server.uuid ]
 		cmd.unshift( 'sudo' ) if self.options.sudo
 
 		url = "http%s://%s:%d" % [
@@ -449,7 +449,9 @@ class Mongrel2::M2SHCommand
 		]
 
 		Mongrel2::Config.log_action( "Starting server: #{server}", self.options.why )
+		message '*' * 70
 		header "Starting mongrel2 at: #{url}"
+		message '*' * 70
 		exec( *cmd )
 	end
 	help :start, "Starts a server."
@@ -524,12 +526,14 @@ class Mongrel2::M2SHCommand
 
 	### The 'bootstrap' command.
 	def bootstrap_command( *args )
-		scriptname = args.shift || DEFAULT_CONFIG_SCRIPT
-		template   = Mongrel2::DATA_DIR + 'config.rb.in'
-		data       = template.read
+		scriptname   = args.shift || DEFAULT_CONFIG_SCRIPT
+		template     = Mongrel2::DATA_DIR + 'config.rb.in'
 
+		# Read the config DSL template
+		data = template.read
 		data.gsub!( /%% PWD %%/, Dir.pwd )
 
+		# Write it out
 		header "Writing a config-generation script to %s" % [ scriptname ]
 		File.open( scriptname, File::WRONLY|File::EXCL|File::CREAT, 0755, encoding: 'utf-8' ) do |fh|
 			fh.print( data )
@@ -542,12 +546,34 @@ class Mongrel2::M2SHCommand
 
 	### The 'quickstart' command.
 	def quickstart_command( *args )
+		idx_template = Mongrel2::DATA_DIR + 'index.html.in'
 		configfile = 'config.rb'
 
 		header "Quickstart!"
 		self.bootstrap_command( configfile )
 		edit( configfile )
 		self.load_command( configfile )
+
+		# Now load the new config DB and fetch the configured server
+		host = Mongrel2::Config.servers.first.hosts.first
+		hello_route = host.routes_dataset.filter( target_type: 'handler' ).first
+
+		# Read the index page template
+		data = idx_template.read
+		data.gsub!( /%% VERSION %%/, Mongrel2.version_string(true) )
+		data.gsub!( /%% HELLOWORLD_SEND_SPEC %%/, hello_route.target.send_spec )
+		data.gsub!( /%% HELLOWORLD_RECV_SPEC %%/, hello_route.target.recv_spec )
+		data.gsub!( /%% HELLOWORLD_URI %%/, hello_route.path[ /([^\(]*)/ ] )
+
+		# Write it out to the public directory
+		header "Writing an index file to public/index.html"
+		Dir.mkdir( 'public' ) unless File.directory?( 'public' )
+		File.open( 'public/index.html', File::WRONLY|File::EXCL|File::CREAT, 0755,
+		           encoding: 'utf-8' ) do |fh|
+			fh.print( data )
+		end
+		message "Done."
+
 		self.start_command()
 	end
 	help :quickstart, "Set up a basic mongrel2 server and run it."
@@ -655,6 +681,36 @@ class Mongrel2::M2SHCommand
 		unless $?.success? || editor =~ /vim/i
 			raise "Editor exited with an error status (%d)" % [ $?.exitstatus ]
 		end
+	end
+
+
+	### Search the PATH for a mongrel2 binary, returning the absolute Pathname to it if found, and
+	### outputting a warning and describing how to set ENV['MONGREL2'] if not.
+	def find_mongrel2
+		if ENV['MONGREL2']
+			m2 = Pathname( ENV['MONGREL2'] )
+			error = nil
+			if !m2.file?
+				error = "but it isn't a plain file."
+			elsif !m2.executable?
+				error = "but it isn't executable."
+			end
+
+			raise "MONGREL2 was set to %p, #{error}" if error
+			
+			return m2
+		else
+			m2 = ENV['PATH'].split( File::PATH_SEPARATOR ).
+				map {|dir| Pathname(dir) + 'mongrel2' }.
+				find {|path| path.executable? }
+
+			return m2 if m2
+
+			raise "The 'mongrel2' binary doesn't seem to be in your PATH. Either " +
+				"add the appropriate directory to your PATH or set the MONGREL2 " +
+				"environment variable to the full path."
+		end
+
 	end
 
 
