@@ -1,3 +1,11 @@
+== v0.30.0 [2012-07-27] Michael Granger <ged@FaerieMUD.org>
+
+- Add a static index page to the quickstart Dir directory.
+- Make the failure to find a mongrel2 binary friendlier.
+- Fix parameter name of ::by_send_ident for auto-mapping by the rest
+  service.
+
+
 == v0.29.0 [2012-07-13] Michael Granger <ged@FaerieMUD.org>
 
 - Make m2sh.rb write audit log events for modifying actions
