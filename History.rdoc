@@ -1,3 +1,9 @@
+== v0.30.1 [2012-07-27] Michael Granger <ged@FaerieMUD.org>
+
+Documentation and packaging fixes. Switch to sqlite3 until
+Amalgalite works until MacOS X again.
+
+
 == v0.30.0 [2012-07-27] Michael Granger <ged@FaerieMUD.org>
 
 - Add a static index page to the quickstart Dir directory.
