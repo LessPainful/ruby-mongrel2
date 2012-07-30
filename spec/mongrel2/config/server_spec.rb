@@ -83,17 +83,29 @@ describe Mongrel2::Config::Server do
 
 	it "knows where its control socket is if there's no setting for control_port" do
 		Mongrel2::Config::Setting.dataset.truncate
+		FileTest.stub( :socket? ).with( '/usr/local/www/run/control' ).
+			and_return( true )
 		@server.control_socket_uri.should == 'ipc:///usr/local/www/run/control'
 	end
 
 	it "knows where its control socket is if there is a setting for control_port" do
 		Mongrel2::Config::Setting.dataset.truncate
+		FileTest.stub( :socket? ).with( '/usr/local/www/var/run/control.sock' ).
+			and_return( true )
 		Mongrel2::Config::Setting.create( key: 'control_port', value: 'ipc://var/run/control.sock' )
 		@server.control_socket_uri.should == 'ipc:///usr/local/www/var/run/control.sock'
 	end
 
+	it "raises an error if the control socket path doesn't point to a UNIX socket" do
+		expect {
+			@server.control_socket
+		}.to raise_error( RuntimeError, /unable to find the socket/i )
+	end
+
 	it "can create a Mongrel2::Control for its control port" do
 		Mongrel2::Config::Setting.dataset.truncate
+		FileTest.stub( :socket? ).with( '/usr/local/www/run/control' ).
+			and_return( true )
 		sock = @server.control_socket
 		sock.should be_a( Mongrel2::Control )
 		sock.close

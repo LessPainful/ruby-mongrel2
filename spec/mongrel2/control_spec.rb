@@ -35,7 +35,9 @@ describe Mongrel2::Control do
 
 		Mongrel2.instance_variable_set( :@zmq_ctx, @ctx )
 
-		@control = Mongrel2::Control.new
+		FileTest.stub( :socket? ).with( 'var/run/control' ). and_return( true )
+
+		@control = Mongrel2::Control.new( 'ipc://var/run/control' )
 	end
 
 	after( :all ) do

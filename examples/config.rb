@@ -20,7 +20,7 @@ server 'examples' do
 
 	access_log   '/logs/access.log'
 	error_log    '/logs/error.log'
-	chroot       '/var/mongrel2'
+	chroot       basedir
 	pid_file     '/var/run/mongrel2.pid'
 
 	bind_addr    '0.0.0.0'
@@ -51,6 +51,7 @@ setting 'control_port', 'ipc://var/run/control'
 setting 'upload.temp_store', upload_dir + 'mongrel2.upload.XXXXXX'
 
 mkdir_p 'var/run'
+mkdir_p 'var/mongrel2'
 mkdir_p 'logs'
 mkdir_p '/tmp/mongrel2-uploads'
 

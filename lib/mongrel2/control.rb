@@ -2,6 +2,7 @@
 
 require 'zmq'
 require 'yajl'
+require 'pathname'
 require 'tnetstring'
 require 'loggability'
 
@@ -25,6 +26,7 @@ class Mongrel2::Control
 
 	### Create a new control port object using the current configuration.
 	def initialize( port=DEFAULT_PORT )
+		check_port( port )
 		@ctx = Mongrel2.zmq_context
 		@socket = @ctx.socket( ZMQ::REQ )
 		@socket.setsockopt( ZMQ::LINGER, 0 )
@@ -205,6 +207,18 @@ class Mongrel2::Control
 		else
 			raise ScriptError, "Don't know how to handle response: %p" % [ table ]
 		end
+	end
+
+
+	### Check the path of the specified port if it's an 'ipc' URL, ensuring that a pipe exists
+	### there, and raising an exception if none does.
+	def check_port( port )
+		scheme, path = port.split( '://' )
+		return unless scheme == 'ipc'
+
+		raise "%s: not a socket" % [ path ] unless FileTest.socket?( path )
+
+		return true
 	end
 
 end # class Mongrel2::Control

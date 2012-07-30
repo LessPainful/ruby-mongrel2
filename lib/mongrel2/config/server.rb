@@ -141,7 +141,14 @@ class Mongrel2::Config::Server < Mongrel2::Config( :server )
 		self.log.debug "  chrooted socket path is: %p" % [ sock_path ]
 
 		csock_path = self.chroot_path + sock_path
-		self.log.debug "  fully-qualified path is: %p" % [ csock_path ]
+		if csock_path.socket?
+			self.log.debug "  socket path is relative to the chroot: %p" % [ csock_path ]
+		else
+			csock_path = Pathname.pwd + sock_path
+			raise "Unable to find the socket path %p" % [ csock_uri ] unless csock_path.socket?
+			self.log.debug "  socket path is relative to the PWD: %p" % [ csock_path ]
+		end
+
 		csock_uri = "%s://%s" % [ scheme, csock_path ]
 
 		self.log.debug "  control socket URI is: %p" % [ csock_uri ]

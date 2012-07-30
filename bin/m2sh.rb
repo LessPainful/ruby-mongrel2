@@ -49,7 +49,7 @@ class Mongrel2::M2SHCommand
 	extend ::Sysexits,
 	       Loggability
 	include Sysexits,
-			Mongrel2::Constants
+	        Mongrel2::Constants
 
 	# Loggability API -- set up logging under the 'strelka' log host
 	log_to :mongrel2
@@ -447,6 +447,14 @@ class Mongrel2::M2SHCommand
 			server.bind_addr,
 			server.port,
 		]
+
+		# Change into the server's chroot directory so paths line up whether or not
+		# it's started as root
+		Dir.chdir( server.chroot ) do
+			Mongrel2::Config.log_action( "Starting server: #{server}", self.options.why )
+			header "Starting mongrel2 at: #{url}"
+			exec( *cmd )
+		end
 
 		Mongrel2::Config.log_action( "Starting server: #{server}", self.options.why )
 		message '*' * 70
